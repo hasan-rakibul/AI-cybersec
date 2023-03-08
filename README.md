@@ -1,1 +1,1 @@
-# AI-cybersec
+# ICT607 &ndash; Artificial Intelligence for Cybersecurity
