@@ -3,3 +3,6 @@ archived/
 *.gz
 *.mhtml
 *.mp4
+*.log 
+*.aux 
+*.out
