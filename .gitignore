@@ -1,4 +1,4 @@
-archived/
+OTHER/
 *.tgz
 *.gz
 *.mhtml
@@ -6,3 +6,4 @@ archived/
 *.log 
 *.aux 
 *.out
+*.docx
