@@ -7,10 +7,10 @@
     sudo apt-get install texlive-xetex texlive-fonts-recommended texlive-plain-generic
     ```
 - `jupyter nbconvert --to latex <filename.ipynb> --output ICT607-lab-<number>-manual.tex`
-- Change the `tex` file (what you like to have). For example, before `\begin{document}` add:
+- Change the `tex` file (what you like to have). For example, before `\begin{document}`around line 167 you can add/modify:
     ```
-    \title{ICT607: Artificial Intelligence for Cybersecurity \\ Experiment <number>}
-    \date{}
+    \title{ICT607: Artificial Intelligence for Cybersecurity}
+    \date{Experiment <number>}
     ```
 - `xelatex' <manual filename.tex>`
 - `rm *.log *.aux *.out` to remove unnecessary files
