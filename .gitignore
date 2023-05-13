@@ -7,3 +7,4 @@ OTHER/
 *.aux 
 *.out
 *.docx
+.ipynb_checkpoints/

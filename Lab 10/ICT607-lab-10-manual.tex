@@ -165,7 +165,7 @@
     % Document parameters
     % Document title
     \title{ICT607: Artificial Intelligence for Cybersecurity}
-    \date{Experiment 9}
+    \date{Experiment 10}
     
     
     
@@ -391,9 +391,9 @@
     
     
 
-    \hypertarget{ai-driven-anomaly-detection-leveraging-lstm-forecasting-technique}{%
-\section{AI-driven anomaly detection: leveraging LSTM forecasting
-technique}\label{ai-driven-anomaly-detection-leveraging-lstm-forecasting-technique}}
+    \hypertarget{ai-driven-anomaly-detection-leveraging-arima-forecasting-technique}{%
+\section{AI-driven anomaly detection: leveraging ARIMA forecasting
+technique}\label{ai-driven-anomaly-detection-leveraging-arima-forecasting-technique}}
 
 Forecasting is a technique used to predict future trends based on
 historical data. In the context of cybersecurity, forecasting can be
@@ -403,63 +403,102 @@ algorithms can help detect anomalies in real-time, allowing
 organizations to proactively respond to potential security incidents
 before they become major issues.
 
-In this lab, we will use Long Short-Term Memory (LSTM) forecasting
-algorithm. LSTM is a type of recurrent neural network architecture that
-is commonly used in deep learning applications. It is designed to handle
-sequential data and is particularly well-suited for time-series
-prediction tasks.
+In this lab, we will use ARIMA (Autoregressive Integrated Moving
+Average) forecasting algorithm. ARIMA is a commonly used time series
+forecasting model. It is a powerful statistical technique for analysing
+and predicting patterns in data, particularly in cases where the data is
+non-stationary or has a trend.
 
-One of the main advantages of LSTM is its ability to remember
-information for extended periods of time, which is important for tasks
-that require long-term dependencies. This is achieved through the use of
-gates that regulate the flow of information within the network.
+ARIMA models are based on three components:
+
+\begin{itemize}
+\tightlist
+\item
+  Autoregression (AR): A linear regression model that uses past values
+  to predict future values. An AR(p) model uses p past values to predict
+  the next value in the series. For example, an AR(2) model for the
+  stock price of a company would use the last two days' stock prices to
+  predict the next day's stock price.
+\item
+  Integrated (I): Integration involves transforming the time series to
+  make it stationary, which means that its statistical properties (such
+  as mean and variance) do not change over time. This is important
+  because many time series have trends or seasonal patterns that make
+  them non-stationary. One common way to transform a time series is to
+  difference it, which involves subtracting each observation from the
+  previous observation. If the original time series is denoted by
+  \(Y_t\), the differenced time series is denoted by \(Y_t - Y_t-1\).
+  For example, if you were trying to forecast the number of monthly
+  visitors to a website, differencing the data could help remove any
+  trends or seasonality.
+\item
+  Moving Average (MA): A model that uses past forecast errors to predict
+  future values. In an MA(q) model, the next value in the series is a
+  function of the past q errors. For example, an MA(1) model for the
+  daily temperature would use yesterday's forecast error to predict
+  today's temperature.
+\end{itemize}
+
+ARIMA models use a combination of these three components to model the
+time series data and predict future values.
 
     \textbf{Reference book:} Chio, C., \& Freeman, D. (2018). \emph{Machine
 learning and security: Protecting systems with data and algorithms}
-(First edition). O'Reilly Media. (page 102)
+(First edition). O'Reilly Media. (page 95)
 
 \textbf{Reference programs:}
-https://github.com/oreilly-mlsec/book-resources/blob/master/chapter3/lstm-anomaly-detection.ipynb
+https://github.com/oreilly-mlsec/book-resources/blob/master/chapter3/arima-forecasting.ipynb
 (Modified and bug fixed)
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
-\PY{k+kn}{import} \PY{n+nn}{pandas} \PY{k}{as} \PY{n+nn}{pd}
-\PY{k+kn}{from} \PY{n+nn}{datetime} \PY{k+kn}{import} \PY{n}{datetime}
-\PY{k+kn}{import} \PY{n+nn}{matplotlib}\PY{n+nn}{.}\PY{n+nn}{pyplot} \PY{k}{as} \PY{n+nn}{plt}
-\PY{k+kn}{import} \PY{n+nn}{time}
+\PY{c+c1}{\PYZsh{} install pyflux (required for using ARIMA model) at colab}
+\PY{err}{!}\PY{n}{pip} \PY{n}{install} \PY{n}{git}\PY{o}{+}\PY{n}{https}\PY{p}{:}\PY{o}{/}\PY{o}{/}\PY{n}{github}\PY{o}{.}\PY{n}{com}\PY{o}{/}\PY{n}{RJT1990}\PY{o}{/}\PY{n}{pyflux}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{2}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{k+kn}{import} \PY{n+nn}{tensorflow} \PY{k}{as} \PY{n+nn}{tf}
-\PY{k+kn}{from} \PY{n+nn}{tensorflow}\PY{n+nn}{.}\PY{n+nn}{keras}\PY{n+nn}{.}\PY{n+nn}{layers} \PY{k+kn}{import} \PY{n}{LSTM}\PY{p}{,} \PY{n}{Dropout}\PY{p}{,} \PY{n}{Dense}
+\PY{k+kn}{import} \PY{n+nn}{pandas} \PY{k}{as} \PY{n+nn}{pd}
+\PY{k+kn}{from} \PY{n+nn}{datetime} \PY{k+kn}{import} \PY{n}{datetime}
+\PY{k+kn}{import} \PY{n+nn}{pyflux} \PY{k}{as} \PY{n+nn}{pf}
+\PY{k+kn}{import} \PY{n+nn}{matplotlib}\PY{n+nn}{.}\PY{n+nn}{pyplot} \PY{k}{as} \PY{n+nn}{plt}
 \end{Verbatim}
 \end{tcolorbox}
 
     \hypertarget{dataset}{%
 \subsection{Dataset}\label{dataset}}
 
-Download the dataset and keep it on your Google drive folder (e.g.,
+Download the datasets and keep it on your Google drive folder (e.g.,
 \texttt{Colab\ Notebooks/AICS/} folder)
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{3}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{k+kn}{from} \PY{n+nn}{google}\PY{n+nn}{.}\PY{n+nn}{colab} \PY{k+kn}{import} \PY{n}{drive}
 \PY{n}{drive}\PY{o}{.}\PY{n}{mount}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{/content/drive}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
+    \begin{Verbatim}[commandchars=\\\{\}]
+Drive already mounted at /content/drive; to attempt to forcibly remount, call
+drive.mount("/content/drive", force\_remount=True).
+    \end{Verbatim}
+
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{4}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{DATA} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}csv}\PY{p}{(}
-      \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{/content/drive/MyDrive/Colab Notebooks/AICS/cpu\PYZhy{}full\PYZhy{}b.csv}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+\PY{c+c1}{\PYZsh{} Read in the training and testing dataset files}
+\PY{n}{data\PYZus{}train\PYZus{}a} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}csv}\PY{p}{(}
+      \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{/content/drive/MyDrive/Colab Notebooks/AICS/cpu\PYZhy{}train\PYZhy{}a.csv}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+      \PY{n}{parse\PYZus{}dates}\PY{o}{=}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}
+      \PY{n}{infer\PYZus{}datetime\PYZus{}format}\PY{o}{=}\PY{k+kc}{True}
+  \PY{p}{)}
+
+\PY{n}{data\PYZus{}test\PYZus{}a} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}csv}\PY{p}{(}
+      \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{/content/drive/MyDrive/Colab Notebooks/AICS/cpu\PYZhy{}test\PYZhy{}a.csv}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
       \PY{n}{parse\PYZus{}dates}\PY{o}{=}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}
       \PY{n}{infer\PYZus{}datetime\PYZus{}format}\PY{o}{=}\PY{k+kc}{True}
   \PY{p}{)}
@@ -477,385 +516,208 @@ The \texttt{infer\_datetime\_format} parameter is True, which means that
 pandas will attempt to infer the date/time format from the CSV file.
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{5}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{DATA}\PY{o}{.}\PY{n}{head}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}
+\PY{n}{data\PYZus{}train\PYZus{}a}\PY{o}{.}\PY{n}{sample}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{5}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-             datetime   cpu
-0 2017-01-27 18:42:00  1.14
-1 2017-01-27 18:43:00  1.10
-2 2017-01-27 18:44:00  1.09
-3 2017-01-27 18:45:00  1.08
-4 2017-01-27 18:46:00  1.08
-5 2017-01-27 18:47:00  1.08
-6 2017-01-27 18:48:00  1.15
-7 2017-01-27 18:49:00  1.13
-8 2017-01-27 18:50:00  1.09
-9 2017-01-27 18:51:00  1.06
+               datetime   cpu
+217 2017-01-27 22:19:00  0.82
+33  2017-01-27 19:15:00  0.72
+273 2017-01-27 23:15:00  1.33
+302 2017-01-27 23:44:00  1.24
+248 2017-01-27 22:50:00  1.64
 \end{Verbatim}
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{6}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} Each training data point will be length 100\PYZhy{}1,}
-\PY{c+c1}{\PYZsh{} since the last value in each sequence is the label}
-\PY{n}{SEQUENCE\PYZus{}LEN} \PY{o}{=} \PY{l+m+mi}{100}
-\end{Verbatim}
-\end{tcolorbox}
-
-    \hypertarget{build-the-lstm-model}{%
-\subsection{Build the LSTM model}\label{build-the-lstm-model}}
-
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{k}{def} \PY{n+nf}{generate\PYZus{}model}\PY{p}{(}\PY{p}{)}\PY{p}{:}
-  \PY{n}{model} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{Sequential}\PY{p}{(}\PY{p}{)}
-
-  \PY{c+c1}{\PYZsh{} First LSTM layer defining the input sequence length}
-  \PY{n}{model}\PY{o}{.}\PY{n}{add}\PY{p}{(}\PY{n}{LSTM}\PY{p}{(}
-      \PY{n}{input\PYZus{}shape}\PY{o}{=}\PY{p}{(}\PY{n}{SEQUENCE\PYZus{}LEN}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,}
-      \PY{n}{units}\PY{o}{=}\PY{l+m+mi}{32}\PY{p}{,}
-      \PY{n}{return\PYZus{}sequences}\PY{o}{=}\PY{k+kc}{True}
-  \PY{p}{)}\PY{p}{)}
-
-  \PY{n}{model}\PY{o}{.}\PY{n}{add}\PY{p}{(}\PY{n}{Dropout}\PY{p}{(}\PY{l+m+mf}{0.2}\PY{p}{)}\PY{p}{)}
-
-  \PY{c+c1}{\PYZsh{} Second LSTM layer with 128 units}
-  \PY{n}{model}\PY{o}{.}\PY{n}{add}\PY{p}{(}\PY{n}{LSTM}\PY{p}{(}
-      \PY{n}{units}\PY{o}{=}\PY{l+m+mi}{128}\PY{p}{,}
-      \PY{n}{return\PYZus{}sequences}\PY{o}{=}\PY{k+kc}{True}
-  \PY{p}{)}\PY{p}{)}
-
-  \PY{n}{model}\PY{o}{.}\PY{n}{add}\PY{p}{(}\PY{n}{Dropout}\PY{p}{(}\PY{l+m+mf}{0.2}\PY{p}{)}\PY{p}{)}
-
-  \PY{c+c1}{\PYZsh{} Third LSTM layer with 100 units}
-  \PY{n}{model}\PY{o}{.}\PY{n}{add}\PY{p}{(}\PY{n}{LSTM}\PY{p}{(}
-      \PY{n}{units}\PY{o}{=}\PY{l+m+mi}{100}\PY{p}{,}
-      \PY{n}{return\PYZus{}sequences}\PY{o}{=}\PY{k+kc}{False}  \PY{c+c1}{\PYZsh{} no more sequence is required for the next layer}
-  \PY{p}{)}\PY{p}{)}
-  
-  \PY{n}{model}\PY{o}{.}\PY{n}{add}\PY{p}{(}\PY{n}{Dropout}\PY{p}{(}\PY{l+m+mf}{0.2}\PY{p}{)}\PY{p}{)}
-
-  \PY{c+c1}{\PYZsh{} Densely\PYZhy{}connected output layer with Linear activation function}
-  \PY{n}{model}\PY{o}{.}\PY{n}{add}\PY{p}{(}\PY{n}{Dense}\PY{p}{(}
-      \PY{n}{units}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{,}
-      \PY{n}{activation}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{linear}\PY{l+s+s1}{\PYZsq{}}
-  \PY{p}{)}\PY{p}{)}
-
-  \PY{n}{model}\PY{o}{.}\PY{n}{compile}\PY{p}{(}
-      \PY{n}{loss}\PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{losses}\PY{o}{.}\PY{n}{MeanSquaredError}\PY{p}{(}\PY{p}{)}\PY{p}{,}
-      \PY{n}{optimizer}\PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{optimizers}\PY{o}{.}\PY{n}{RMSprop}\PY{p}{(}\PY{n}{learning\PYZus{}rate}\PY{o}{=}\PY{l+m+mf}{0.001}\PY{p}{)}
-  \PY{p}{)}
-
-  \PY{k}{return} \PY{n}{model}
-\end{Verbatim}
-\end{tcolorbox}
-
-    The model consists of three LSTM layers with 32, 128, and 100 units
-respectively, along with a densely-connected output layer with a linear
-activation function. The input sequence length is defined by the
-``SEQUENCE\_LEN'' variable minus one, and the model includes dropout
-regularization with a rate of 0.2 to prevent overfitting.
-
-The input shape is defined as (SEQUENCE\_LEN-1, 1) in the first LSTM
-layer. The first dimension of the input shape (SEQUENCE\_LEN-1) refers
-to the length of the input sequence, while the second dimension (1)
-refers to the number of features in each time step of the input
-sequence.
-
-The model is compiled using the mean squared error loss function and the
-RMSprop optimizer with a learning rate of 0.001.
-
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{k}{def} \PY{n+nf}{normalise}\PY{p}{(}\PY{n}{result}\PY{p}{)}\PY{p}{:}
-  \PY{n}{result\PYZus{}mean} \PY{o}{=} \PY{n}{result}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}
-  \PY{n}{result\PYZus{}std} \PY{o}{=} \PY{n}{result}\PY{o}{.}\PY{n}{std}\PY{p}{(}\PY{p}{)}
-  \PY{n}{result} \PY{o}{\PYZhy{}}\PY{o}{=} \PY{n}{result\PYZus{}mean}
-  \PY{n}{result} \PY{o}{/}\PY{o}{=} \PY{n}{result\PYZus{}std}
-  \PY{k}{return} \PY{n}{result}
-\end{Verbatim}
-\end{tcolorbox}
-
-    The function normalises the data by subtracting the mean and dividing by
-the standard deviation. This is a common technique used to scale and
-center data around zero, which can help improve the performance of
-machine learning models.
-
-    \hypertarget{data-preparation}{%
-\subsection{Data preparation}\label{data-preparation}}
-
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{k}{def} \PY{n+nf}{prepare\PYZus{}data}\PY{p}{(}\PY{n}{data}\PY{p}{,} \PY{n}{train\PYZus{}start}\PY{p}{,} \PY{n}{train\PYZus{}end}\PY{p}{,} \PY{n}{test\PYZus{}start}\PY{p}{,} \PY{n}{test\PYZus{}end}\PY{p}{)}\PY{p}{:}
-  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s2}{Length of Data}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n+nb}{len}\PY{p}{(}\PY{n}{data}\PY{p}{)}\PY{p}{)}
-
-  \PY{c+c1}{\PYZsh{} training data}
-  \PY{n}{result} \PY{o}{=} \PY{p}{[}\PY{p}{]}
-  \PY{k}{for} \PY{n}{index} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{train\PYZus{}start}\PY{p}{,} \PY{n}{train\PYZus{}end}\PY{o}{\PYZhy{}}\PY{n}{SEQUENCE\PYZus{}LEN}\PY{p}{)}\PY{p}{:}
-    \PY{n}{result}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{data}\PY{p}{[}\PY{n}{index}\PY{p}{:} \PY{n}{index} \PY{o}{+} \PY{n}{SEQUENCE\PYZus{}LEN}\PY{p}{]}\PY{p}{)}
-  \PY{n}{result} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{n}{result}\PY{p}{)}
-  \PY{n}{result} \PY{o}{=} \PY{n}{normalise}\PY{p}{(}\PY{n}{result}\PY{p}{)}
-
-  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s2}{Training data shape: }\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{result}\PY{o}{.}\PY{n}{shape}\PY{p}{)}
-  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Training data:}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{result}\PY{p}{)}
-
-  \PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{shuffle}\PY{p}{(}\PY{n}{result}\PY{p}{)}
-  
-  \PY{n}{X\PYZus{}train} \PY{o}{=} \PY{n}{result}\PY{p}{[}\PY{p}{:}\PY{p}{,} \PY{p}{:}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}
-  \PY{n}{y\PYZus{}train} \PY{o}{=} \PY{n}{result}\PY{p}{[}\PY{p}{:}\PY{p}{,} \PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}
-
-  \PY{c+c1}{\PYZsh{} test data}
-  \PY{n}{result} \PY{o}{=} \PY{p}{[}\PY{p}{]}
-  \PY{k}{for} \PY{n}{index} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{test\PYZus{}start}\PY{p}{,} \PY{n}{test\PYZus{}end}\PY{o}{\PYZhy{}}\PY{n}{SEQUENCE\PYZus{}LEN}\PY{p}{)}\PY{p}{:}
-    \PY{n}{result}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{data}\PY{p}{[}\PY{n}{index}\PY{p}{:} \PY{n}{index} \PY{o}{+} \PY{n}{SEQUENCE\PYZus{}LEN}\PY{p}{]}\PY{p}{)}
-  \PY{n}{result} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{n}{result}\PY{p}{)}
-  \PY{n}{result} \PY{o}{=} \PY{n}{normalise}\PY{p}{(}\PY{n}{result}\PY{p}{)}
-
-  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s2}{Test data shape: }\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{result}\PY{o}{.}\PY{n}{shape}\PY{p}{)}
-  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s2}{Test data:}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{result}\PY{p}{)}
-
-  \PY{n}{X\PYZus{}test} \PY{o}{=} \PY{n}{result}\PY{p}{[}\PY{p}{:}\PY{p}{,} \PY{p}{:}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}
-  \PY{n}{y\PYZus{}test} \PY{o}{=} \PY{n}{result}\PY{p}{[}\PY{p}{:}\PY{p}{,} \PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}
-
-  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s2}{Shape X\PYZus{}train: }\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{np}\PY{o}{.}\PY{n}{shape}\PY{p}{(}\PY{n}{X\PYZus{}train}\PY{p}{)}\PY{p}{)}
-  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Shape X\PYZus{}test: }\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{np}\PY{o}{.}\PY{n}{shape}\PY{p}{(}\PY{n}{X\PYZus{}test}\PY{p}{)}\PY{p}{)}
-
-  \PY{n}{X\PYZus{}train} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{reshape}\PY{p}{(}\PY{n}{X\PYZus{}train}\PY{p}{,} \PY{p}{(}\PY{n}{X\PYZus{}train}\PY{o}{.}\PY{n}{shape}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{n}{X\PYZus{}train}\PY{o}{.}\PY{n}{shape}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,} \PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}
-  \PY{n}{X\PYZus{}test} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{reshape}\PY{p}{(}\PY{n}{X\PYZus{}test}\PY{p}{,} \PY{p}{(}\PY{n}{X\PYZus{}test}\PY{o}{.}\PY{n}{shape}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{n}{X\PYZus{}test}\PY{o}{.}\PY{n}{shape}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,} \PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}
-
-  \PY{k}{return} \PY{n}{X\PYZus{}train}\PY{p}{,} \PY{n}{y\PYZus{}train}\PY{p}{,} \PY{n}{X\PYZus{}test}\PY{p}{,} \PY{n}{y\PYZus{}test}
-\end{Verbatim}
-\end{tcolorbox}
-
-    The function first prints the length of the input data. It creates two
-sets of data: one for training and one for testing.
-
-For the training data, the function creates a list result of sequences
-with length SEQUENCE\_LEN by iterating over the input data from
-train\_start to train\_end. The result list is then converted to a numpy
-array and normalised using the normalise function. It then shuffles the
-normalised training data and separates the input features X\_train (all
-columns except the last) from the target values y\_train (the last
-column).
-
-For the test data, the function follows the same procedure as for the
-training data, but uses the input data from test\_start to test\_end
-instead.
-
-Finally, the function reshapes the input features X\_train and X\_test
-to have an additional dimension of size 1.
-
-Reshaping is necessary here because the input data X\_train and X\_test
-need to be formatted to fit the input shape of the LSTM layers in the
-model. Specifically, the LSTM layers in the model expect input data in a
-3D format of shape (batch\_size, sequence\_length, input\_dim), where:
-
-\begin{itemize}
-\tightlist
-\item
-  batch\_size is the number of samples in each batch of data
-\item
-  sequence\_length is the length of each input sequence
-\item
-  input\_dim is the number of features in the input data
-\end{itemize}
-
-In the prepare\_data function, input (X) and target (y) arrays have
-shapes (num\_samples, sequence\_length-1) and (num\_samples,),
-respectively.
-
-To prepare the data for input into the LSTM layers, we need to reshape
-the input arrays to add an extra dimension for the input\_dim. This is
-achieved by calling the reshape() function on X\_train and X\_test and
-specifying the new shape to be (num\_samples, sequence\_length-1, 1).
-This creates a new 3D array with the required shape to fit the LSTM
-layers in the model.
-
-    \hypertarget{running-the-lstm-model-with-necessary-plotting}{%
-\subsection{Running the LSTM model with necessary
-plotting}\label{running-the-lstm-model-with-necessary-plotting}}
-
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{k}{def} \PY{n+nf}{run}\PY{p}{(}\PY{n}{model}\PY{o}{=}\PY{k+kc}{None}\PY{p}{,} \PY{n}{data}\PY{o}{=}\PY{k+kc}{None}\PY{p}{,} \PY{n}{epochs}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{,} \PY{n}{batch\PYZus{}size}\PY{o}{=}\PY{l+m+mi}{50}\PY{p}{)}\PY{p}{:}
-  \PY{n}{global\PYZus{}start\PYZus{}time} \PY{o}{=} \PY{n}{time}\PY{o}{.}\PY{n}{time}\PY{p}{(}\PY{p}{)}
-
-  \PY{n}{data} \PY{o}{=} \PY{n}{data}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{cpu}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{to\PYZus{}numpy}\PY{p}{(}\PY{p}{)}
-
-  \PY{c+c1}{\PYZsh{} train on first 700 samples and test on next 300 samples}
-  \PY{n}{X\PYZus{}train}\PY{p}{,} \PY{n}{y\PYZus{}train}\PY{p}{,} \PY{n}{X\PYZus{}test}\PY{p}{,} \PY{n}{y\PYZus{}test} \PY{o}{=} \PY{n}{prepare\PYZus{}data}\PY{p}{(}
-      \PY{n}{data}\PY{o}{=}\PY{n}{data}\PY{p}{,}
-      \PY{n}{train\PYZus{}start}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{,}
-      \PY{n}{train\PYZus{}end}\PY{o}{=}\PY{l+m+mi}{400}\PY{p}{,}
-      \PY{n}{test\PYZus{}start}\PY{o}{=}\PY{l+m+mi}{400}\PY{p}{,}
-      \PY{n}{test\PYZus{}end}\PY{o}{=}\PY{l+m+mi}{660}
-  \PY{p}{)}
-
-  \PY{k}{if} \PY{n}{model} \PY{o+ow}{is} \PY{k+kc}{None}\PY{p}{:}
-    \PY{n}{model} \PY{o}{=} \PY{n}{generate\PYZus{}model}\PY{p}{(}\PY{p}{)}
-
-  \PY{k}{try}\PY{p}{:}
-    \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s2}{Training...}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
-    \PY{n}{model}\PY{o}{.}\PY{n}{fit}\PY{p}{(}
-        \PY{n}{x}\PY{o}{=}\PY{n}{X\PYZus{}train}\PY{p}{,}
-        \PY{n}{y}\PY{o}{=}\PY{n}{y\PYZus{}train}\PY{p}{,}
-        \PY{n}{batch\PYZus{}size}\PY{o}{=}\PY{n}{batch\PYZus{}size}\PY{p}{,}
-        \PY{n}{epochs}\PY{o}{=}\PY{n}{epochs}\PY{p}{,}
-        \PY{n}{validation\PYZus{}split}\PY{o}{=}\PY{l+m+mf}{0.05}
-    \PY{p}{)}
-    \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s2}{Predicting...}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
-    \PY{n}{predicted} \PY{o}{=} \PY{n}{model}\PY{o}{.}\PY{n}{predict}\PY{p}{(}\PY{n}{X\PYZus{}test}\PY{p}{)}
-
-    \PY{n}{predicted} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{reshape}\PY{p}{(}\PY{n}{predicted}\PY{p}{,} \PY{p}{(}\PY{n}{predicted}\PY{o}{.}\PY{n}{size}\PY{p}{,}\PY{p}{)}\PY{p}{)}
-
-  \PY{k}{except} \PY{n+ne}{KeyboardInterrupt}\PY{p}{:}
-    \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{prediction exception}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
-    \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Training duration:}\PY{l+s+si}{\PYZob{}\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{time}\PY{o}{.}\PY{n}{time}\PY{p}{(}\PY{p}{)}\PY{o}{\PYZhy{}}\PY{n}{global\PYZus{}start\PYZus{}time}\PY{p}{)}\PY{p}{)}
-    \PY{k}{return} \PY{n}{model}\PY{p}{,} \PY{n}{y\PYZus{}test}\PY{p}{,} \PY{l+m+mi}{0}
-
-  \PY{k}{try}\PY{p}{:}
-    \PY{n}{plt}\PY{o}{.}\PY{n}{figure}\PY{p}{(}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{)}
-    \PY{n}{plt}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{y\PYZus{}test}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{b}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Observed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-    \PY{n}{plt}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{predicted}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{g}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Predicted}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-    \PY{n}{plt}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{p}{(}\PY{p}{(}\PY{n}{y\PYZus{}test}\PY{o}{\PYZhy{}}\PY{n}{predicted}\PY{p}{)}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{r}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Root\PYZhy{}mean\PYZhy{}square deviation}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
-    \PY{n}{plt}\PY{o}{.}\PY{n}{legend}\PY{p}{(}\PY{p}{)}
-    \PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
-  \PY{k}{except} \PY{n+ne}{Exception} \PY{k}{as} \PY{n}{e}\PY{p}{:}
-    \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{plotting exception}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
-    \PY{n+nb}{print}\PY{p}{(}\PY{n+nb}{str}\PY{p}{(}\PY{n}{e}\PY{p}{)}\PY{p}{)}
-  
-  \PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Training duration: }\PY{l+s+si}{\PYZob{}\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}\PY{n}{time}\PY{o}{.}\PY{n}{time}\PY{p}{(}\PY{p}{)}\PY{o}{\PYZhy{}}\PY{n}{global\PYZus{}start\PYZus{}time}\PY{p}{)}\PY{p}{)}
-
-  \PY{k}{return} \PY{n}{model}\PY{p}{,} \PY{n}{y\PYZus{}test}\PY{p}{,} \PY{n}{predicted}
-\end{Verbatim}
-\end{tcolorbox}
-
-    By setting train\_start=0 and train\_end=400, the first 400 data points
-are used for training. Similarly, by setting test\_start=400 and
-test\_end=660, the next 260 data points are used for testing. Therefore,
-the model is trained on the first 400 time steps of the dataset and
-tested on the subsequent 260 time steps. This split ensures that the
-model is evaluated on unseen data and not overfitting to the training
-dataset.
-
-The purpose of predicted = np.reshape(predicted, (predicted.size,)) is
-to convert the predicted values from a two-dimensional numpy array of
-shape (n,1) to a one-dimensional numpy array of shape (n,), where n is
-the number of predicted values.
-
-In other words, the np.reshape() function is used to ``flatten'' the
-predicted values array, which makes it easier to perform calculations on
-the predicted values or to plot them against the actual values.
-
-The first plot command plots the actual values of the test dataset as a
-blue line with the label ``Observed''.
-
-The second plot command plots the predicted values of the test dataset
-as a green line with the label ``Predicted''.
-
-The third plot command plots the root-mean-square deviation (RMSE)
-between the predicted and actual values as a red line with the label
-``Root-mean-square deviation''. The RMSE is calculated as the square
-root of the mean squared error between the predicted and actual values.
-((y\_test-predicted)**2) is used to calculate the squared error between
-the predicted and actual values.
-
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{model}\PY{p}{,} \PY{n}{y\PYZus{}test}\PY{p}{,} \PY{n}{predicted} \PY{o}{=} \PY{n}{run}\PY{p}{(}\PY{n}{data}\PY{o}{=}\PY{n}{DATA}\PY{p}{)}
+\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Train data shape:}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{data\PYZus{}train\PYZus{}a}\PY{o}{.}\PY{n}{shape}\PY{p}{)}
+\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Test data shape:}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{data\PYZus{}test\PYZus{}a}\PY{o}{.}\PY{n}{shape}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{Verbatim}[commandchars=\\\{\}]
-
-Length of Data 660
-
-Training data shape:  (300, 100)
-Training data:
- [[-0.08360845 -0.17863064 -0.20238619 {\ldots}  2.22067983  2.43447977
-   2.60076861]
- [-0.17863064 -0.20238619 -0.22614174 {\ldots}  2.43447977  2.60076861
-   1.79307994]
- [-0.20238619 -0.22614174 -0.22614174 {\ldots}  2.60076861  1.79307994
-   1.31796896]
- {\ldots}
- [ 0.55779138  1.17543566  0.72408023 {\ldots}  2.38696867  1.88810214
-   2.19692428]
- [ 1.17543566  0.72408023  0.41525809 {\ldots}  1.88810214  2.19692428
-   3.21841289]
- [ 0.72408023  0.41525809  0.22521369 {\ldots}  2.19692428  3.21841289
-   3.26592399]]
-
-Test data shape:  (160, 100)
-
-Test data:
- [[ 1.65059432  1.76888841  1.11827094 {\ldots} -0.85329712 -0.83358144
-  -0.675856  ]
- [ 1.76888841  1.11827094  0.80282005 {\ldots} -0.83358144 -0.675856
-  -0.675856  ]
- [ 1.11827094  0.80282005  1.39429047 {\ldots} -0.675856   -0.675856
-  -0.65614032]
- {\ldots}
- [ 0.94082982  0.78310437  0.50708484 {\ldots}  2.24206474  2.34064315
-   1.70974136]
- [ 0.78310437  0.50708484  0.36907508 {\ldots}  2.34064315  1.70974136
-   1.4731532 ]
- [ 0.50708484  0.36907508  0.29021236 {\ldots}  1.70974136  1.4731532
-   1.59144728]]
-
-Shape X\_train:  (300, 99)
-Shape X\_test:  (160, 99)
-
-Training{\ldots}
-Epoch 1/3
-6/6 [==============================] - 17s 740ms/step - loss: 0.7312 - val\_loss:
-0.2465
-Epoch 2/3
-6/6 [==============================] - 4s 744ms/step - loss: 0.3824 - val\_loss:
-0.1302
-Epoch 3/3
-6/6 [==============================] - 2s 391ms/step - loss: 0.2226 - val\_loss:
-0.1349
-
-Predicting{\ldots}
-5/5 [==============================] - 2s 96ms/step
+Train data shape: (420, 2)
+Test data shape: (60, 2)
     \end{Verbatim}
 
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{7}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{plt}\PY{o}{.}\PY{n}{figure}\PY{p}{(}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{data\PYZus{}train\PYZus{}a}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{datetime}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{data\PYZus{}train\PYZus{}a}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{cpu}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{black}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{CPU }\PY{l+s+s1}{\PYZpc{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{CPU Utilisation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{7}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+Text(0.5, 1.0, 'CPU Utilisation')
+\end{Verbatim}
+\end{tcolorbox}
+        
     \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-9-manual_files/ICT607-lab-9-manual_22_1.png}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-10-manual_files/ICT607-lab-10-manual_11_1.png}
     \end{center}
     { \hspace*{\fill} \\}
     
+    \hypertarget{build-the-arima-model}{%
+\subsection{Build the ARIMA model}\label{build-the-arima-model}}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{8}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{model\PYZus{}a} \PY{o}{=} \PY{n}{pf}\PY{o}{.}\PY{n}{ARIMA}\PY{p}{(}
+    \PY{n}{data}\PY{o}{=}\PY{n}{data\PYZus{}train\PYZus{}a}\PY{p}{,}
+    \PY{n}{ar}\PY{o}{=}\PY{l+m+mi}{11}\PY{p}{,}
+    \PY{n}{ma}\PY{o}{=}\PY{l+m+mi}{11}\PY{p}{,}
+    \PY{n}{integ}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{,}
+    \PY{n}{target}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{cpu}\PY{l+s+s1}{\PYZsq{}}
+\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Documentation of ARIMA implementation by pyflux is
+\href{https://pyflux.readthedocs.io/en/latest/arima.html\#class-description}{here}.
+
+There are some tricks to determining the
+\href{https://people.duke.edu/~rnau/411arim3.htm}{AR and MA orders} and
+the \href{https://people.duke.edu/~rnau/411arim2.htm}{differencing
+order}. But you can also try with different values to see what work best
+for the dataset -- hyperparameter tuning.
+
+To oversimplify matters, AR and MA orders are needed to correct any
+residual autocorrelations that remain in the differenced series (i.e.,
+between the time-shifted series and itself). The differencing order is a
+term used to make the series stationary---an already stationary series
+should have a differencing order of 0, a series with a constant average
+trend (steadily trending upward or downward) should have a differencing
+order of 1, etc.
+
+    \hypertarget{running-the-arima-model-with-necessary-plotting}{%
+\subsection{Running the ARIMA model with necessary
+plotting}\label{running-the-arima-model-with-necessary-plotting}}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{9}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Estimate latent variables for the model using the}
+\PY{c+c1}{\PYZsh{} Metropolis\PYZhy{}Hastings algorithm as the inference method}
+\PY{n}{x} \PY{o}{=} \PY{n}{model\PYZus{}a}\PY{o}{.}\PY{n}{fit}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{M\PYZhy{}H}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+Acceptance rate of Metropolis-Hastings is 0.0
+Acceptance rate of Metropolis-Hastings is 0.0776
+Acceptance rate of Metropolis-Hastings is 0.0949
+Acceptance rate of Metropolis-Hastings is 0.1723
+Acceptance rate of Metropolis-Hastings is 0.2684
+
+Tuning complete! Now sampling.
+Acceptance rate of Metropolis-Hastings is 0.419225
+Acceptance rate of Metropolis-Hastings is 0.2217
+Acceptance rate of Metropolis-Hastings is 0.27445
+    \end{Verbatim}
+
+    
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{10}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Plot the fit of the ARIMA model against the data}
+\PY{n}{model\PYZus{}a}\PY{o}{.}\PY{n}{plot\PYZus{}fit}\PY{p}{(}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-10-manual_files/ICT607-lab-10-manual_18_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    As we can see, the results fit the observed data quite well. Next, we
+can do an in-sample test on the last 60 data points of the training
+data. The in-sample test is a validation step that treats the last
+subsection of the series as unknown and performs forecasting for those
+time steps. This process allows us to evaluate performance of the model
+without running tests on future/test data:
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{11}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{model\PYZus{}a}\PY{o}{.}\PY{n}{plot\PYZus{}predict\PYZus{}is}\PY{p}{(}\PY{n}{h}\PY{o}{=}\PY{l+m+mi}{60}\PY{p}{,} \PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-10-manual_files/ICT607-lab-10-manual_20_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The in-sample prediction test looks pretty good because it does not
+deviate from the original series significantly in phase and amplitude.
+
+    Now, let's run the actual forecasting, plotting the most recent 100
+observed data points followed by the model's 60 predicted values along
+with their confidence intervals.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{12}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{model\PYZus{}a}\PY{o}{.}\PY{n}{plot\PYZus{}predict}\PY{p}{(}\PY{n}{h}\PY{o}{=}\PY{l+m+mi}{60}\PY{p}{,} \PY{n}{past\PYZus{}values}\PY{o}{=}\PY{l+m+mi}{100}\PY{p}{,} \PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{20}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-10-manual_files/ICT607-lab-10-manual_23_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    Bands with a darker shade imply a higher confidence.
+
+    Now, let's compare the predicted values with actual values to detect
+anomalies. Actual observed values corresponding to the above 60
+predicted values are stored in the \texttt{data\_test\_a} variable.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{13}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{plt}\PY{o}{.}\PY{n}{figure}\PY{p}{(}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{12}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{data\PYZus{}test\PYZus{}a}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{datetime}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{data\PYZus{}test\PYZus{}a}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{cpu}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{black}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{CPU }\PY{l+s+s1}{\PYZpc{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{CPU Utilisation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{13}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+Text(0.5, 1.0, 'CPU Utilisation')
+\end{Verbatim}
+\end{tcolorbox}
+        
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-10-manual_files/ICT607-lab-10-manual_26_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    Since the forecasted CPU utilisation ad observed CPU utilisation are
+quite similar and falls under higher confidence bands, it is unlikely
+that there are any anomalies.
+
     \hypertarget{practice-task}{%
 \subsection{Practice task}\label{practice-task}}
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  Change the \texttt{train\_start}, \texttt{train\_end},
-  \texttt{test\_start}, and \texttt{test\_end} parameters in the run
-  function and observe how the generated graph changes in terms of
-  anomaly detection. Try to increase the training data and decrease the
-  test data or vice versa. Comment on how the changes affect the model's
-  ability to detect anomalies.
-\item
-  Load the \texttt{cpu-full-a.csv} dataset and analyse the dataset to
-  detect anomalies. Experiment with different hyperparameters to achieve
-  better results. Finally, visualise the predictions and the actual data
-  to understand how the model is performing.
-\end{enumerate}
+Use the \texttt{cpu-train-b.csv} datasets to fit an ARIMA model and then
+detect anomalies on \texttt{cpu-test-b.csv} dataset.
 
 
     % Add a bibliography block to the postdoc
