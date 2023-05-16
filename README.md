@@ -1,5 +1,14 @@
 # ICT607 &ndash; Artificial Intelligence for Cybersecurity
 
+## Helpful resources
+## Blogs/tutorial
+- [10 minutes to Pandas](https://pandas.pydata.org/pandas-docs/stable/user_guide/10min.html)
+
+## Books
+- [Dive into Deep Learning](https://d2l.ai/index.html)
+- [Interpretable Machine Learning](https://christophm.github.io/interpretable-ml-book/)
+- [Python Data Science Handbook](https://jakevdp.github.io/PythonDataScienceHandbook/)
+
 ## Generating lab manuals from ipynb files
 - Requirements
     ```
