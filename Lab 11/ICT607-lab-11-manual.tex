@@ -172,7 +172,6 @@
     
     
     
-    
 % Pygments definitions
 \makeatletter
 \def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
@@ -471,15 +470,15 @@ Mounted at /content/drive
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{5}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Ten samples of good domains: }\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{good\PYZus{}domains}\PY{p}{[}\PY{l+m+mi}{1000}\PY{p}{:}\PY{l+m+mi}{1005}\PY{p}{]}\PY{p}{)}
-\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Ten samples of toxic domains: }\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{toxic\PYZus{}domains}\PY{p}{[}\PY{l+m+mi}{1000}\PY{p}{:}\PY{l+m+mi}{1005}\PY{p}{]}\PY{p}{)}
+\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Five samples of good domains: }\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{good\PYZus{}domains}\PY{p}{[}\PY{l+m+mi}{1000}\PY{p}{:}\PY{l+m+mi}{1005}\PY{p}{]}\PY{p}{)}
+\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Five samples of toxic domains: }\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{toxic\PYZus{}domains}\PY{p}{[}\PY{l+m+mi}{1000}\PY{p}{:}\PY{l+m+mi}{1005}\PY{p}{]}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{Verbatim}[commandchars=\\\{\}]
-Ten samples of good domains:  ['101prikaz.ru', '101razasdeperros.com',
+Five samples of good domains:  ['101prikaz.ru', '101razasdeperros.com',
 '101recipe.com', '101secureonline.com', '101shans.ru']
-Ten samples of toxic domains:  ['allaboutemarketing.info',
+Five samples of toxic domains:  ['allaboutemarketing.info',
 'allaboutlabyrinths.com', 'alladyn.unixstorm.org', 'allairjordanoutlet.us',
 'allairmaxsaleoutlet.us']
     \end{Verbatim}
@@ -538,7 +537,7 @@ CountVectorizer for this purpose.
 
     \hypertarget{applying-k-means-clustering}{%
 \subsection{Applying K-means
-Clustering}\label{applying-k-means-clustering}}
+clustering}\label{applying-k-means-clustering}}
 
 Now, we can apply the K-means clustering algorithm to the feature matrix
 obtained in the previous step. We'll use scikit-learn's KMeans class for
@@ -590,8 +589,8 @@ KMeans(n\_clusters=2, random\_state=0)
 \end{tcolorbox}
         
     \hypertarget{analysing-the-clustering-results}{%
-\subsection{Analysing the Clustering
-Results}\label{analysing-the-clustering-results}}
+\subsection{Analysing the clustering
+results}\label{analysing-the-clustering-results}}
 
 After clustering, we can analyse the results to see which domains belong
 to which cluster.
