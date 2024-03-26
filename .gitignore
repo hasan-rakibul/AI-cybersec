@@ -1,6 +1,7 @@
 OTHER/
 MU_wordmark_2021_red_RGB.png
 **/*-manual_files/
+*.tex
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
