@@ -14,10 +14,17 @@
     ```
     sudo apt-get install pandoc
     sudo apt-get install texlive-xetex texlive-fonts-recommended texlive-plain-generic
+    python -m pip install nbconvert
     ```
 - `jupyter nbconvert --to latex <filename.ipynb> --output ICT607-lab-<number>-manual.tex`
 - Change the `tex` file (what you like to have). For example, before `\begin{document}`around line 167 you can add/modify:
     ```
+    \usepackage{fancyhdr,lastpage}
+    \pagestyle{fancyplain}
+    \fancyhf{}
+    \renewcommand{\headrulewidth}{0pt}
+    \rhead{\includegraphics[width=4cm]{../MU_wordmark_2021_red_RGB.png}}
+    \fancyfoot[C]{\footnotesize\textbf{\thepage} of \pageref*{LastPage}}
     \title{ICT607: Artificial Intelligence for Cybersecurity}
     \date{Experiment <number>}
     ```

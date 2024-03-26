@@ -7,6 +7,8 @@
     % Basic figure setup, for now with no caption control since it's done
     % automatically by Pandoc (which extracts ![](path) syntax from Markdown).
     \usepackage{graphicx}
+    % Keep aspect ratio if custom image width or height is specified
+    \setkeys{Gin}{keepaspectratio}
     % Maintain compatibility with old templates. Remove in nbconvert 6.0
     \let\Oldincludegraphics\includegraphics
     % Ensure that by default, figures have no caption (until we provide a
@@ -78,6 +80,7 @@
     \usepackage[inline]{enumitem} % IRkernel/repr support (it uses the enumerate* environment)
     \usepackage[normalem]{ulem} % ulem is needed to support strikethroughs (\sout)
                                 % normalem makes italics be italics, not underlines
+    \usepackage{soul}      % strikethrough (\st) support for pandoc >= 3.0.0
     \usepackage{mathrsfs}
     
 
@@ -170,6 +173,8 @@
     
     
     
+    
+    
 % Pygments definitions
 \makeatletter
 \def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
@@ -217,6 +222,7 @@
 \@namedef{PY@tok@gr}{\def\PY@tc##1{\textcolor[rgb]{0.89,0.00,0.00}{##1}}}
 \@namedef{PY@tok@ge}{\let\PY@it=\textit}
 \@namedef{PY@tok@gs}{\let\PY@bf=\textbf}
+\@namedef{PY@tok@ges}{\let\PY@bf=\textbf\let\PY@it=\textit}
 \@namedef{PY@tok@gp}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
 \@namedef{PY@tok@go}{\def\PY@tc##1{\textcolor[rgb]{0.44,0.44,0.44}{##1}}}
 \@namedef{PY@tok@gt}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.27,0.87}{##1}}}
@@ -379,8 +385,14 @@
     
     \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
     
-    \title{ICT607: Artificial Intelligence for Cybersecurity \\ Experiment 5}
-    \date{}
+    \usepackage{fancyhdr,lastpage}
+    \pagestyle{fancyplain}
+    \fancyhf{}
+    \renewcommand{\headrulewidth}{0pt}
+    \rhead{\includegraphics[width=4cm]{../MU_wordmark_2021_red_RGB.png}}
+    \fancyfoot[C]{\footnotesize\textbf{\thepage} of \pageref*{LastPage}}
+    \title{ICT607: Artificial Intelligence for Cybersecurity}
+    \date{Experiment 5}
 
 \begin{document}
     
@@ -390,11 +402,6 @@
 
     
     
-
-    \begin{figure}
-\centering
-\caption{MU\_wordmark\_2021\_red\_RGB.png}
-\end{figure}
 
     \textbf{Lab 5: Preprocessing dataset -- intrusion detection}
 
@@ -429,7 +436,7 @@ Unzip and upload \emph{kddcup.data\_10\_percent.gz} file into
 \emph{/content} folder of your colab session.
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{1}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{k+kn}{import} \PY{n+nn}{pandas} \PY{k}{as} \PY{n+nn}{pd}
 \PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
@@ -439,70 +446,204 @@ Unzip and upload \emph{kddcup.data\_10\_percent.gz} file into
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{2}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} feature\PYZus{}names found from https://www.kaggle.com/datasets/galaxyh/kdd\PYZhy{}cup\PYZhy{}1999\PYZhy{}data?resource=download\PYZam{}select=kddcup.names}
-\PY{n}{feature\PYZus{}names}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{duration}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{protocol\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{flag}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{src\PYZus{}bytes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}bytes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{land}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{wrong\PYZus{}fragment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{urgent}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{hot}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}failed\PYZus{}logins}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{logged\PYZus{}in}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}compromised}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{root\PYZus{}shell}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{su\PYZus{}attempted}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}root}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}file\PYZus{}creations}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}shells}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}access\PYZus{}files}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}outbound\PYZus{}cmds}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{is\PYZus{}host\PYZus{}login}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{is\PYZus{}guest\PYZus{}login}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{same\PYZus{}srv\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{diff\PYZus{}srv\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}diff\PYZus{}host\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}same\PYZus{}srv\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}diff\PYZus{}srv\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}same\PYZus{}src\PYZus{}port\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}diff\PYZus{}host\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
- \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\PY{n}{df} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}csv}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{kddcup.data\PYZus{}10\PYZus{}percent.gz}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+\PY{n+nb}{print}\PY{p}{(}\PY{n}{df}\PY{o}{.}\PY{n}{columns}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{head}\PY{p}{(}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nb}{len}\PY{p}{(}\PY{n}{feature\PYZus{}names}\PY{p}{)}
-\end{Verbatim}
-\end{tcolorbox}
+    \begin{Verbatim}[commandchars=\\\{\}]
+Index(['0', 'tcp', 'http', 'SF', '181', '5450', '0.1', '0.2', '0.3', '0.4',
+       '0.5', '1', '0.6', '0.7', '0.8', '0.9', '0.10', '0.12', '0.13', '0.14',
+       '0.15', '0.16', '8', '8.1', '0.00', '0.00.1', '0.00.2', '0.00.3',
+       '1.00', '0.00.4', '0.00.5', '9', '9.1', '1.00.1', '0.00.6', '0.11',
+       '0.00.7', '0.00.8', '0.00.9', '0.00.10', '0.00.11', 'normal.'],
+      dtype='object')
+    \end{Verbatim}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{2}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-42
+   0  tcp  http  SF  181  5450  0.1  0.2  0.3  0.4  {\ldots}  9.1  1.00.1  0.00.6  \textbackslash{}
+0  0  tcp  http  SF  239   486    0    0    0    0  {\ldots}   19     1.0     0.0
+1  0  tcp  http  SF  235  1337    0    0    0    0  {\ldots}   29     1.0     0.0
+2  0  tcp  http  SF  219  1337    0    0    0    0  {\ldots}   39     1.0     0.0
+3  0  tcp  http  SF  217  2032    0    0    0    0  {\ldots}   49     1.0     0.0
+4  0  tcp  http  SF  217  2032    0    0    0    0  {\ldots}   59     1.0     0.0
+
+   0.11  0.00.7  0.00.8  0.00.9  0.00.10  0.00.11  normal.
+0  0.05     0.0     0.0     0.0      0.0      0.0  normal.
+1  0.03     0.0     0.0     0.0      0.0      0.0  normal.
+2  0.03     0.0     0.0     0.0      0.0      0.0  normal.
+3  0.02     0.0     0.0     0.0      0.0      0.0  normal.
+4  0.02     0.0     0.0     0.0      0.0      0.0  normal.
+
+[5 rows x 42 columns]
 \end{Verbatim}
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{3}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}csv}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{kddcup.data\PYZus{}10\PYZus{}percent.gz}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{header}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\PY{n+nb}{print}\PY{p}{(}\PY{n}{df}\PY{o}{.}\PY{n}{columns}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{head}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+Int64Index([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+            34, 35, 36, 37, 38, 39, 40, 41],
+           dtype='int64')
+    \end{Verbatim}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{3}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+   0    1     2   3    4     5   6   7   8   9   {\ldots}  32   33   34    35   36  \textbackslash{}
+0   0  tcp  http  SF  181  5450   0   0   0   0  {\ldots}   9  1.0  0.0  0.11  0.0
+1   0  tcp  http  SF  239   486   0   0   0   0  {\ldots}  19  1.0  0.0  0.05  0.0
+2   0  tcp  http  SF  235  1337   0   0   0   0  {\ldots}  29  1.0  0.0  0.03  0.0
+3   0  tcp  http  SF  219  1337   0   0   0   0  {\ldots}  39  1.0  0.0  0.03  0.0
+4   0  tcp  http  SF  217  2032   0   0   0   0  {\ldots}  49  1.0  0.0  0.02  0.0
+
+    37   38   39   40       41
+0  0.0  0.0  0.0  0.0  normal.
+1  0.0  0.0  0.0  0.0  normal.
+2  0.0  0.0  0.0  0.0  normal.
+3  0.0  0.0  0.0  0.0  normal.
+4  0.0  0.0  0.0  0.0  normal.
+
+[5 rows x 42 columns]
+\end{Verbatim}
+\end{tcolorbox}
+        
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{4}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} feature\PYZus{}names found from https://www.kaggle.com/datasets/galaxyh/kdd\PYZhy{}cup\PYZhy{}1999\PYZhy{}data?resource=download\PYZam{}select=kddcup.names}
+\PY{n}{feature\PYZus{}names}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{duration}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{protocol\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{flag}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{src\PYZus{}bytes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}bytes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{land}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{wrong\PYZus{}fragment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{urgent}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{hot}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}failed\PYZus{}logins}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{logged\PYZus{}in}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}compromised}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{root\PYZus{}shell}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{su\PYZus{}attempted}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}root}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}file\PYZus{}creations}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}shells}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}access\PYZus{}files}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}outbound\PYZus{}cmds}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{is\PYZus{}host\PYZus{}login}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{is\PYZus{}guest\PYZus{}login}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{same\PYZus{}srv\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{diff\PYZus{}srv\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}diff\PYZus{}host\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}same\PYZus{}srv\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}diff\PYZus{}srv\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}same\PYZus{}src\PYZus{}port\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}diff\PYZus{}host\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+ \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{5}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Load the dataset}
+\PY{n}{df} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}csv}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{kddcup.data\PYZus{}10\PYZus{}percent.gz}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{names}\PY{o}{=}\PY{n}{feature\PYZus{}names}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{6}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df}\PY{o}{.}\PY{n}{head}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{6}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+   duration protocol\_type service flag  src\_bytes  dst\_bytes  land  \textbackslash{}
+0         0           tcp    http   SF        181       5450     0
+1         0           tcp    http   SF        239        486     0
+2         0           tcp    http   SF        235       1337     0
+3         0           tcp    http   SF        219       1337     0
+4         0           tcp    http   SF        217       2032     0
+
+   wrong\_fragment  urgent  hot  {\ldots}  dst\_host\_srv\_count  \textbackslash{}
+0               0       0    0  {\ldots}                   9
+1               0       0    0  {\ldots}                  19
+2               0       0    0  {\ldots}                  29
+3               0       0    0  {\ldots}                  39
+4               0       0    0  {\ldots}                  49
+
+   dst\_host\_same\_srv\_rate  dst\_host\_diff\_srv\_rate  \textbackslash{}
+0                     1.0                     0.0
+1                     1.0                     0.0
+2                     1.0                     0.0
+3                     1.0                     0.0
+4                     1.0                     0.0
+
+   dst\_host\_same\_src\_port\_rate  dst\_host\_srv\_diff\_host\_rate  \textbackslash{}
+0                         0.11                          0.0
+1                         0.05                          0.0
+2                         0.03                          0.0
+3                         0.03                          0.0
+4                         0.02                          0.0
+
+   dst\_host\_serror\_rate  dst\_host\_srv\_serror\_rate  dst\_host\_rerror\_rate  \textbackslash{}
+0                   0.0                       0.0                   0.0
+1                   0.0                       0.0                   0.0
+2                   0.0                       0.0                   0.0
+3                   0.0                       0.0                   0.0
+4                   0.0                       0.0                   0.0
+
+   dst\_host\_srv\_rerror\_rate   target
+0                       0.0  normal.
+1                       0.0  normal.
+2                       0.0  normal.
+3                       0.0  normal.
+4                       0.0  normal.
+
+[5 rows x 42 columns]
+\end{Verbatim}
+\end{tcolorbox}
+        
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{7}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value\PYZus{}counts}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{7}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+smurf.              280790
+neptune.            107201
+normal.              97278
+back.                 2203
+satan.                1589
+ipsweep.              1247
+portsweep.            1040
+warezclient.          1020
+teardrop.              979
+pod.                   264
+nmap.                  231
+guess\_passwd.           53
+buffer\_overflow.        30
+land.                   21
+warezmaster.            20
+imap.                   12
+rootkit.                10
+loadmodule.              9
+ftp\_write.               8
+multihop.                7
+phf.                     4
+perl.                    3
+spy.                     2
+Name: target, dtype: int64
+\end{Verbatim}
+\end{tcolorbox}
+        
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{8}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{c+c1}{\PYZsh{} attack\PYZus{}types found from https://www.kaggle.com/datasets/galaxyh/kdd\PYZhy{}cup\PYZhy{}1999\PYZhy{}data?resource=download\PYZam{}select=training\PYZus{}attack\PYZus{}types}
 \PY{c+c1}{\PYZsh{} dot (.) added with each type to match the dataset}
@@ -535,272 +676,48 @@ Unzip and upload \emph{kddcup.data\_10\_percent.gz} file into
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} Load the dataset}
-\PY{n}{df} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}csv}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{kddcup.data\PYZus{}10\PYZus{}percent.gz}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{names}\PY{o}{=}\PY{n}{feature\PYZus{}names}\PY{p}{)}
-\end{Verbatim}
-\end{tcolorbox}
-
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df}
-\end{Verbatim}
-\end{tcolorbox}
-
-            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-        duration protocol\_type service flag  src\_bytes  dst\_bytes  land  \textbackslash{}
-0              0           tcp    http   SF        181       5450     0
-1              0           tcp    http   SF        239        486     0
-2              0           tcp    http   SF        235       1337     0
-3              0           tcp    http   SF        219       1337     0
-4              0           tcp    http   SF        217       2032     0
-{\ldots}          {\ldots}           {\ldots}     {\ldots}  {\ldots}        {\ldots}        {\ldots}   {\ldots}
-494016         0           tcp    http   SF        310       1881     0
-494017         0           tcp    http   SF        282       2286     0
-494018         0           tcp    http   SF        203       1200     0
-494019         0           tcp    http   SF        291       1200     0
-494020         0           tcp    http   SF        219       1234     0
-
-        wrong\_fragment  urgent  hot  {\ldots}  dst\_host\_srv\_count  \textbackslash{}
-0                    0       0    0  {\ldots}                   9
-1                    0       0    0  {\ldots}                  19
-2                    0       0    0  {\ldots}                  29
-3                    0       0    0  {\ldots}                  39
-4                    0       0    0  {\ldots}                  49
-{\ldots}                {\ldots}     {\ldots}  {\ldots}  {\ldots}                 {\ldots}
-494016               0       0    0  {\ldots}                 255
-494017               0       0    0  {\ldots}                 255
-494018               0       0    0  {\ldots}                 255
-494019               0       0    0  {\ldots}                 255
-494020               0       0    0  {\ldots}                 255
-
-        dst\_host\_same\_srv\_rate  dst\_host\_diff\_srv\_rate  \textbackslash{}
-0                          1.0                     0.0
-1                          1.0                     0.0
-2                          1.0                     0.0
-3                          1.0                     0.0
-4                          1.0                     0.0
-{\ldots}                        {\ldots}                     {\ldots}
-494016                     1.0                     0.0
-494017                     1.0                     0.0
-494018                     1.0                     0.0
-494019                     1.0                     0.0
-494020                     1.0                     0.0
-
-        dst\_host\_same\_src\_port\_rate  dst\_host\_srv\_diff\_host\_rate  \textbackslash{}
-0                              0.11                         0.00
-1                              0.05                         0.00
-2                              0.03                         0.00
-3                              0.03                         0.00
-4                              0.02                         0.00
-{\ldots}                             {\ldots}                          {\ldots}
-494016                         0.01                         0.05
-494017                         0.17                         0.05
-494018                         0.06                         0.05
-494019                         0.04                         0.05
-494020                         0.17                         0.05
-
-        dst\_host\_serror\_rate  dst\_host\_srv\_serror\_rate  dst\_host\_rerror\_rate  \textbackslash{}
-0                       0.00                      0.00                   0.0
-1                       0.00                      0.00                   0.0
-2                       0.00                      0.00                   0.0
-3                       0.00                      0.00                   0.0
-4                       0.00                      0.00                   0.0
-{\ldots}                      {\ldots}                       {\ldots}                   {\ldots}
-494016                  0.00                      0.01                   0.0
-494017                  0.00                      0.01                   0.0
-494018                  0.06                      0.01                   0.0
-494019                  0.04                      0.01                   0.0
-494020                  0.00                      0.01                   0.0
-
-        dst\_host\_srv\_rerror\_rate   target
-0                            0.0  normal.
-1                            0.0  normal.
-2                            0.0  normal.
-3                            0.0  normal.
-4                            0.0  normal.
-{\ldots}                          {\ldots}      {\ldots}
-494016                       0.0  normal.
-494017                       0.0  normal.
-494018                       0.0  normal.
-494019                       0.0  normal.
-494020                       0.0  normal.
-
-[494021 rows x 42 columns]
-\end{Verbatim}
-\end{tcolorbox}
-        
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value\PYZus{}counts}\PY{p}{(}\PY{p}{)}
-\end{Verbatim}
-\end{tcolorbox}
-
-            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-smurf.              280790
-neptune.            107201
-normal.              97278
-back.                 2203
-satan.                1589
-ipsweep.              1247
-portsweep.            1040
-warezclient.          1020
-teardrop.              979
-pod.                   264
-nmap.                  231
-guess\_passwd.           53
-buffer\_overflow.        30
-land.                   21
-warezmaster.            20
-imap.                   12
-rootkit.                10
-loadmodule.              9
-ftp\_write.               8
-multihop.                7
-phf.                     4
-perl.                    3
-spy.                     2
-Name: target, dtype: int64
-\end{Verbatim}
-\end{tcolorbox}
-        
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{attack\PYZus{}types}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{back.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
-\end{Verbatim}
-\end{tcolorbox}
-
-            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-'dos'
-\end{Verbatim}
-\end{tcolorbox}
-        
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{9}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{c+c1}{\PYZsh{} adding attack\PYZus{}type column}
-\PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{attack\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{n}{df}\PY{o}{.}\PY{n}{target}\PY{o}{.}\PY{n}{apply}\PY{p}{(}\PY{k}{lambda} \PY{n}{r}\PY{p}{:}\PY{n}{attack\PYZus{}types}\PY{p}{[}\PY{n}{r}\PY{p}{]}\PY{p}{)}
+\PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{attack\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{n}{df}\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{target}\PY{l+s+s2}{\PYZdq{}}\PY{p}{]}\PY{o}{.}\PY{n}{map}\PY{p}{(}\PY{n}{attack\PYZus{}types}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{10}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df}
+\PY{n}{df}\PY{o}{.}\PY{n}{iloc}\PY{p}{[}\PY{l+m+mi}{7600}\PY{p}{:}\PY{l+m+mi}{7605}\PY{p}{,} \PY{o}{\PYZhy{}}\PY{l+m+mi}{2}\PY{p}{:}\PY{p}{]}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{10}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-        duration protocol\_type service flag  src\_bytes  dst\_bytes  land  \textbackslash{}
-0              0           tcp    http   SF        181       5450     0
-1              0           tcp    http   SF        239        486     0
-2              0           tcp    http   SF        235       1337     0
-3              0           tcp    http   SF        219       1337     0
-4              0           tcp    http   SF        217       2032     0
-{\ldots}          {\ldots}           {\ldots}     {\ldots}  {\ldots}        {\ldots}        {\ldots}   {\ldots}
-494016         0           tcp    http   SF        310       1881     0
-494017         0           tcp    http   SF        282       2286     0
-494018         0           tcp    http   SF        203       1200     0
-494019         0           tcp    http   SF        291       1200     0
-494020         0           tcp    http   SF        219       1234     0
-
-        wrong\_fragment  urgent  hot  {\ldots}  dst\_host\_same\_srv\_rate  \textbackslash{}
-0                    0       0    0  {\ldots}                     1.0
-1                    0       0    0  {\ldots}                     1.0
-2                    0       0    0  {\ldots}                     1.0
-3                    0       0    0  {\ldots}                     1.0
-4                    0       0    0  {\ldots}                     1.0
-{\ldots}                {\ldots}     {\ldots}  {\ldots}  {\ldots}                     {\ldots}
-494016               0       0    0  {\ldots}                     1.0
-494017               0       0    0  {\ldots}                     1.0
-494018               0       0    0  {\ldots}                     1.0
-494019               0       0    0  {\ldots}                     1.0
-494020               0       0    0  {\ldots}                     1.0
-
-        dst\_host\_diff\_srv\_rate  dst\_host\_same\_src\_port\_rate  \textbackslash{}
-0                          0.0                         0.11
-1                          0.0                         0.05
-2                          0.0                         0.03
-3                          0.0                         0.03
-4                          0.0                         0.02
-{\ldots}                        {\ldots}                          {\ldots}
-494016                     0.0                         0.01
-494017                     0.0                         0.17
-494018                     0.0                         0.06
-494019                     0.0                         0.04
-494020                     0.0                         0.17
-
-        dst\_host\_srv\_diff\_host\_rate  dst\_host\_serror\_rate  \textbackslash{}
-0                              0.00                  0.00
-1                              0.00                  0.00
-2                              0.00                  0.00
-3                              0.00                  0.00
-4                              0.00                  0.00
-{\ldots}                             {\ldots}                   {\ldots}
-494016                         0.05                  0.00
-494017                         0.05                  0.00
-494018                         0.05                  0.06
-494019                         0.05                  0.04
-494020                         0.05                  0.00
-
-        dst\_host\_srv\_serror\_rate  dst\_host\_rerror\_rate  \textbackslash{}
-0                           0.00                   0.0
-1                           0.00                   0.0
-2                           0.00                   0.0
-3                           0.00                   0.0
-4                           0.00                   0.0
-{\ldots}                          {\ldots}                   {\ldots}
-494016                      0.01                   0.0
-494017                      0.01                   0.0
-494018                      0.01                   0.0
-494019                      0.01                   0.0
-494020                      0.01                   0.0
-
-        dst\_host\_srv\_rerror\_rate   target  attack\_type
-0                            0.0  normal.       normal
-1                            0.0  normal.       normal
-2                            0.0  normal.       normal
-3                            0.0  normal.       normal
-4                            0.0  normal.       normal
-{\ldots}                          {\ldots}      {\ldots}          {\ldots}
-494016                       0.0  normal.       normal
-494017                       0.0  normal.       normal
-494018                       0.0  normal.       normal
-494019                       0.0  normal.       normal
-494020                       0.0  normal.       normal
-
-[494021 rows x 43 columns]
+        target attack\_type
+7600   normal.      normal
+7601  neptune.         dos
+7602  neptune.         dos
+7603   normal.      normal
+7604   normal.      normal
 \end{Verbatim}
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{11}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}\PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{,}\PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{12}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{df}\PY{o}{.}\PY{n}{head}\PY{p}{(}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{12}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
    duration protocol\_type service flag  src\_bytes  dst\_bytes  land  \textbackslash{}
 0         0           tcp    http   SF        181       5450     0
@@ -849,14 +766,14 @@ Name: target, dtype: int64
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{13}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{attack\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value\PYZus{}counts}\PY{p}{(}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{13}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 dos       391458
 normal     97278
@@ -868,7 +785,7 @@ Name: attack\_type, dtype: int64
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{14}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{c+c1}{\PYZsh{} Visualisation}
 \PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{attack\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value\PYZus{}counts}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{kind}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{bar}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
@@ -876,9 +793,28 @@ Name: attack\_type, dtype: int64
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{14}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 <Axes: >
+\end{Verbatim}
+\end{tcolorbox}
+        
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-5-manual_files/ICT607-lab-5-manual_16_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{15}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{protocol\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value\PYZus{}counts}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{kind}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{bar}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{xlabel}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Protocol types}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{ylabel}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{frequency}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{15}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+<Axes: xlabel='Protocol types', ylabel='frequency'>
 \end{Verbatim}
 \end{tcolorbox}
         
@@ -887,38 +823,33 @@ Name: attack\_type, dtype: int64
     \end{center}
     { \hspace*{\fill} \\}
     
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{protocol\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value\PYZus{}counts}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{kind}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{bar}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{n}{xlabel}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Protocol types}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{n}{ylabel}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{frequency}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
-\end{Verbatim}
-\end{tcolorbox}
-
-            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-<Axes: xlabel='Protocol types', ylabel='frequency'>
-\end{Verbatim}
-\end{tcolorbox}
-        
-    \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-5-manual_files/ICT607-lab-5-manual_18_1.png}
-    \end{center}
-    { \hspace*{\fill} \\}
-    
     \hypertarget{removing-na-values-and-constant-features}{%
 \section{Removing NA values and constant
 features}\label{removing-na-values-and-constant-features}}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{16}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df}\PY{o}{.}\PY{n}{isna}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{any}\PY{p}{(}\PY{p}{)} \PY{c+c1}{\PYZsh{} checking NA values}
+\PY{n}{df}\PY{o}{.}\PY{n}{isna}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{any}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{any}\PY{p}{(}\PY{p}{)} \PY{c+c1}{\PYZsh{} checking NA values}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{16}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+False
+\end{Verbatim}
+\end{tcolorbox}
+        
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{17}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df}\PY{o}{.}\PY{n}{isna}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{any}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{17}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 duration                       False
 protocol\_type                  False
@@ -967,108 +898,83 @@ dtype: bool
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{18}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} df.dropna(\PYZsq{}columns\PYZsq{},inplace=True)}
+\PY{c+c1}{\PYZsh{} df.dropna(...)}
+\PY{c+c1}{\PYZsh{} df.fillna(...)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{19}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df} \PY{o}{=} \PY{n}{df}\PY{p}{[}\PY{p}{[}\PY{n}{col} \PY{k}{for} \PY{n}{col} \PY{o+ow}{in} \PY{n}{df} \PY{k}{if} \PY{n}{df}\PY{p}{[}\PY{n}{col}\PY{p}{]}\PY{o}{.}\PY{n}{nunique}\PY{p}{(}\PY{p}{)}\PY{o}{\PYZgt{}}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{]} \PY{c+c1}{\PYZsh{} keep columns where there are more than 1 unique values}
+\PY{n}{keep\PYZus{}col} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+\PY{k}{for} \PY{n}{col} \PY{o+ow}{in} \PY{n}{df}\PY{p}{:}
+    \PY{k}{if} \PY{n}{df}\PY{p}{[}\PY{n}{col}\PY{p}{]}\PY{o}{.}\PY{n}{nunique}\PY{p}{(}\PY{p}{)}\PY{o}{\PYZgt{}}\PY{l+m+mi}{1}\PY{p}{:}
+      \PY{n}{keep\PYZus{}col}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{col}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{20}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df}
+\PY{n}{df} \PY{o}{=} \PY{n}{df}\PY{p}{[}\PY{n}{keep\PYZus{}col}\PY{p}{]} \PY{c+c1}{\PYZsh{} keep columns where there are more than 1 unique values}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{21}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df}\PY{o}{.}\PY{n}{head}\PY{p}{(}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{21}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-        duration protocol\_type service flag  src\_bytes  dst\_bytes  land  \textbackslash{}
-0              0           tcp    http   SF        181       5450     0
-1              0           tcp    http   SF        239        486     0
-2              0           tcp    http   SF        235       1337     0
-3              0           tcp    http   SF        219       1337     0
-4              0           tcp    http   SF        217       2032     0
-{\ldots}          {\ldots}           {\ldots}     {\ldots}  {\ldots}        {\ldots}        {\ldots}   {\ldots}
-494016         0           tcp    http   SF        310       1881     0
-494017         0           tcp    http   SF        282       2286     0
-494018         0           tcp    http   SF        203       1200     0
-494019         0           tcp    http   SF        291       1200     0
-494020         0           tcp    http   SF        219       1234     0
+   duration protocol\_type service flag  src\_bytes  dst\_bytes  land  \textbackslash{}
+0         0           tcp    http   SF        181       5450     0
+1         0           tcp    http   SF        239        486     0
+2         0           tcp    http   SF        235       1337     0
+3         0           tcp    http   SF        219       1337     0
+4         0           tcp    http   SF        217       2032     0
 
-        wrong\_fragment  urgent  hot  {\ldots}  dst\_host\_srv\_count  \textbackslash{}
-0                    0       0    0  {\ldots}                   9
-1                    0       0    0  {\ldots}                  19
-2                    0       0    0  {\ldots}                  29
-3                    0       0    0  {\ldots}                  39
-4                    0       0    0  {\ldots}                  49
-{\ldots}                {\ldots}     {\ldots}  {\ldots}  {\ldots}                 {\ldots}
-494016               0       0    0  {\ldots}                 255
-494017               0       0    0  {\ldots}                 255
-494018               0       0    0  {\ldots}                 255
-494019               0       0    0  {\ldots}                 255
-494020               0       0    0  {\ldots}                 255
+   wrong\_fragment  urgent  hot  {\ldots}  dst\_host\_srv\_count  \textbackslash{}
+0               0       0    0  {\ldots}                   9
+1               0       0    0  {\ldots}                  19
+2               0       0    0  {\ldots}                  29
+3               0       0    0  {\ldots}                  39
+4               0       0    0  {\ldots}                  49
 
-        dst\_host\_same\_srv\_rate  dst\_host\_diff\_srv\_rate  \textbackslash{}
-0                          1.0                     0.0
-1                          1.0                     0.0
-2                          1.0                     0.0
-3                          1.0                     0.0
-4                          1.0                     0.0
-{\ldots}                        {\ldots}                     {\ldots}
-494016                     1.0                     0.0
-494017                     1.0                     0.0
-494018                     1.0                     0.0
-494019                     1.0                     0.0
-494020                     1.0                     0.0
+   dst\_host\_same\_srv\_rate  dst\_host\_diff\_srv\_rate  \textbackslash{}
+0                     1.0                     0.0
+1                     1.0                     0.0
+2                     1.0                     0.0
+3                     1.0                     0.0
+4                     1.0                     0.0
 
-        dst\_host\_same\_src\_port\_rate  dst\_host\_srv\_diff\_host\_rate  \textbackslash{}
-0                              0.11                         0.00
-1                              0.05                         0.00
-2                              0.03                         0.00
-3                              0.03                         0.00
-4                              0.02                         0.00
-{\ldots}                             {\ldots}                          {\ldots}
-494016                         0.01                         0.05
-494017                         0.17                         0.05
-494018                         0.06                         0.05
-494019                         0.04                         0.05
-494020                         0.17                         0.05
+   dst\_host\_same\_src\_port\_rate  dst\_host\_srv\_diff\_host\_rate  \textbackslash{}
+0                         0.11                          0.0
+1                         0.05                          0.0
+2                         0.03                          0.0
+3                         0.03                          0.0
+4                         0.02                          0.0
 
-        dst\_host\_serror\_rate  dst\_host\_srv\_serror\_rate  dst\_host\_rerror\_rate  \textbackslash{}
-0                       0.00                      0.00                   0.0
-1                       0.00                      0.00                   0.0
-2                       0.00                      0.00                   0.0
-3                       0.00                      0.00                   0.0
-4                       0.00                      0.00                   0.0
-{\ldots}                      {\ldots}                       {\ldots}                   {\ldots}
-494016                  0.00                      0.01                   0.0
-494017                  0.00                      0.01                   0.0
-494018                  0.06                      0.01                   0.0
-494019                  0.04                      0.01                   0.0
-494020                  0.00                      0.01                   0.0
+   dst\_host\_serror\_rate  dst\_host\_srv\_serror\_rate  dst\_host\_rerror\_rate  \textbackslash{}
+0                   0.0                       0.0                   0.0
+1                   0.0                       0.0                   0.0
+2                   0.0                       0.0                   0.0
+3                   0.0                       0.0                   0.0
+4                   0.0                       0.0                   0.0
 
-        dst\_host\_srv\_rerror\_rate  attack\_type
-0                            0.0       normal
-1                            0.0       normal
-2                            0.0       normal
-3                            0.0       normal
-4                            0.0       normal
-{\ldots}                          {\ldots}          {\ldots}
-494016                       0.0       normal
-494017                       0.0       normal
-494018                       0.0       normal
-494019                       0.0       normal
-494020                       0.0       normal
+   dst\_host\_srv\_rerror\_rate  attack\_type
+0                       0.0       normal
+1                       0.0       normal
+2                       0.0       normal
+3                       0.0       normal
+4                       0.0       normal
 
-[494021 rows x 40 columns]
+[5 rows x 40 columns]
 \end{Verbatim}
 \end{tcolorbox}
         
@@ -1077,171 +983,211 @@ dtype: bool
 features}\label{removing-highly-correlated-features}}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{22}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{corr} \PY{o}{=} \PY{n}{df}\PY{o}{.}\PY{n}{corr}\PY{p}{(}\PY{p}{)} \PY{c+c1}{\PYZsh{} Pearson correlation coefficient between the columns}
-\PY{n}{plt}\PY{o}{.}\PY{n}{figure}\PY{p}{(}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{15}\PY{p}{,}\PY{l+m+mi}{12}\PY{p}{)}\PY{p}{)} \PY{c+c1}{\PYZsh{} creates a new figure with a specified size of 15 inches by 12 inches.}
+\PY{n}{corr} \PY{o}{=} \PY{n}{df}\PY{o}{.}\PY{n}{corr}\PY{p}{(}\PY{n}{numeric\PYZus{}only}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)} \PY{c+c1}{\PYZsh{} Pearson correlation coefficient between the columns}
+\PY{n}{plt}\PY{o}{.}\PY{n}{figure}\PY{p}{(}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{15}\PY{p}{,} \PY{l+m+mi}{12}\PY{p}{)}\PY{p}{)} \PY{c+c1}{\PYZsh{} creates a new figure with a specified size of 15 inches by 12 inches.}
 \PY{n}{sns}\PY{o}{.}\PY{n}{heatmap}\PY{p}{(}\PY{n}{corr}\PY{p}{)} \PY{c+c1}{\PYZsh{} creates a heatmap of the correlation matrix using seaborn}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{22}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 <Axes: >
 \end{Verbatim}
 \end{tcolorbox}
         
     \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-5-manual_files/ICT607-lab-5-manual_25_1.png}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-5-manual_files/ICT607-lab-5-manual_26_1.png}
     \end{center}
     { \hspace*{\fill} \\}
     
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{23}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df}\PY{o}{.}\PY{n}{corr}\PY{p}{(}\PY{n}{numeric\PYZus{}only}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}\PY{o}{.}\PY{n}{unstack}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{sort\PYZus{}values}\PY{p}{(}\PY{n}{ascending}\PY{o}{=}\PY{k+kc}{False}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{23}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+duration                  duration                1.000000
+root\_shell                root\_shell              1.000000
+is\_guest\_login            is\_guest\_login          1.000000
+num\_access\_files          num\_access\_files        1.000000
+num\_shells                num\_shells              1.000000
+                                                    {\ldots}
+dst\_host\_srv\_serror\_rate  same\_srv\_rate          -0.857544
+same\_srv\_rate             dst\_host\_serror\_rate   -0.857835
+dst\_host\_serror\_rate      same\_srv\_rate          -0.857835
+same\_srv\_rate             serror\_rate            -0.858247
+serror\_rate               same\_srv\_rate          -0.858247
+Length: 1296, dtype: float64
+\end{Verbatim}
+\end{tcolorbox}
+        
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{24}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{c+c1}{\PYZsh{} num\PYZus{}root is highly correlated with num\PYZus{}compromised and should be ignored for analysis.}
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}root}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,}\PY{n}{inplace} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)} \PY{c+c1}{\PYZsh{} axis=1 specifies that we want to drop the columns axis}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}root}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)} \PY{c+c1}{\PYZsh{} axis=1 specifies that we want to drop the columns axis}
 
 \PY{c+c1}{\PYZsh{} srv\PYZus{}serror\PYZus{}rate is highly correlated with serror\PYZus{}rate and should be ignored for analysis.}
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,}\PY{n}{inplace} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
 
 \PY{c+c1}{\PYZsh{} srv\PYZus{}rerror\PYZus{}rate is highly correlated with rerror\PYZus{}rate and should be ignored for analysis.}
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
 
 \PY{c+c1}{\PYZsh{} dst\PYZus{}host\PYZus{}srv\PYZus{}serror\PYZus{}rate is highly correlated with srv\PYZus{}serror\PYZus{}rate and should be ignored for analysis.}
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
 
 \PY{c+c1}{\PYZsh{} dst\PYZus{}host\PYZus{}serror\PYZus{}rate is highly correlated with rerror\PYZus{}rate and should be ignored for analysis.}
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}serror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
 
 \PY{c+c1}{\PYZsh{} dst\PYZus{}host\PYZus{}rerror\PYZus{}rate is highly correlated with srv\PYZus{}rerror\PYZus{}rate and should be ignored for analysis.}
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
 
 \PY{c+c1}{\PYZsh{} dst\PYZus{}host\PYZus{}srv\PYZus{}rerror\PYZus{}rate is highly correlated with rerror\PYZus{}rate and should be ignored for analysis.}
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}srv\PYZus{}rerror\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
 
 \PY{c+c1}{\PYZsh{} dst\PYZus{}host\PYZus{}same\PYZus{}srv\PYZus{}rate is highly correlated with dst\PYZus{}host\PYZus{}srv\PYZus{}count and should be ignored for analysis.}
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}same\PYZus{}srv\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dst\PYZus{}host\PYZus{}same\PYZus{}srv\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
 
 \PY{c+c1}{\PYZsh{} srv\PYZus{}count is highly correlated with count and should be ignored for analysis.}
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{srv\PYZus{}count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{25}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{corr} \PY{o}{=} \PY{n}{df}\PY{o}{.}\PY{n}{corr}\PY{p}{(}\PY{p}{)} \PY{c+c1}{\PYZsh{} Pearson correlation coefficient between the columns}
-\PY{n}{plt}\PY{o}{.}\PY{n}{figure}\PY{p}{(}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{15}\PY{p}{,}\PY{l+m+mi}{12}\PY{p}{)}\PY{p}{)} \PY{c+c1}{\PYZsh{} creates a new figure with a specified size of 15 inches by 12 inches.}
+\PY{n}{corr} \PY{o}{=} \PY{n}{df}\PY{o}{.}\PY{n}{corr}\PY{p}{(}\PY{n}{numeric\PYZus{}only}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)} \PY{c+c1}{\PYZsh{} Pearson correlation coefficient between the columns}
+\PY{n}{plt}\PY{o}{.}\PY{n}{figure}\PY{p}{(}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{15}\PY{p}{,} \PY{l+m+mi}{12}\PY{p}{)}\PY{p}{)} \PY{c+c1}{\PYZsh{} creates a new figure with a specified size of 15 inches by 12 inches.}
 \PY{n}{sns}\PY{o}{.}\PY{n}{heatmap}\PY{p}{(}\PY{n}{corr}\PY{p}{)} \PY{c+c1}{\PYZsh{} creates a heatmap of the correlation matrix using seaborn}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{25}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 <Axes: >
 \end{Verbatim}
 \end{tcolorbox}
         
     \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-5-manual_files/ICT607-lab-5-manual_27_1.png}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{ICT607-lab-5-manual_files/ICT607-lab-5-manual_29_1.png}
     \end{center}
     { \hspace*{\fill} \\}
     
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{26}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df}\PY{o}{.}\PY{n}{head}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{26}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+   duration protocol\_type service flag  src\_bytes  dst\_bytes  land  \textbackslash{}
+0         0           tcp    http   SF        181       5450     0
+1         0           tcp    http   SF        239        486     0
+2         0           tcp    http   SF        235       1337     0
+3         0           tcp    http   SF        219       1337     0
+4         0           tcp    http   SF        217       2032     0
+
+   wrong\_fragment  urgent  hot  {\ldots}  rerror\_rate  same\_srv\_rate  \textbackslash{}
+0               0       0    0  {\ldots}          0.0            1.0
+1               0       0    0  {\ldots}          0.0            1.0
+2               0       0    0  {\ldots}          0.0            1.0
+3               0       0    0  {\ldots}          0.0            1.0
+4               0       0    0  {\ldots}          0.0            1.0
+
+   diff\_srv\_rate  srv\_diff\_host\_rate  dst\_host\_count  dst\_host\_srv\_count  \textbackslash{}
+0            0.0                 0.0               9                   9
+1            0.0                 0.0              19                  19
+2            0.0                 0.0              29                  29
+3            0.0                 0.0              39                  39
+4            0.0                 0.0              49                  49
+
+   dst\_host\_diff\_srv\_rate  dst\_host\_same\_src\_port\_rate  \textbackslash{}
+0                     0.0                         0.11
+1                     0.0                         0.05
+2                     0.0                         0.03
+3                     0.0                         0.03
+4                     0.0                         0.02
+
+   dst\_host\_srv\_diff\_host\_rate  attack\_type
+0                          0.0       normal
+1                          0.0       normal
+2                          0.0       normal
+3                          0.0       normal
+4                          0.0       normal
+
+[5 rows x 31 columns]
+\end{Verbatim}
+\end{tcolorbox}
+        
     \hypertarget{label-encoding-the-features}{%
 \section{Label encoding the
 features}\label{label-encoding-the-features}}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{27}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df}
+\PY{n}{df}\PY{o}{.}\PY{n}{dtypes}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{27}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-        duration protocol\_type service flag  src\_bytes  dst\_bytes  land  \textbackslash{}
-0              0           tcp    http   SF        181       5450     0
-1              0           tcp    http   SF        239        486     0
-2              0           tcp    http   SF        235       1337     0
-3              0           tcp    http   SF        219       1337     0
-4              0           tcp    http   SF        217       2032     0
-{\ldots}          {\ldots}           {\ldots}     {\ldots}  {\ldots}        {\ldots}        {\ldots}   {\ldots}
-494016         0           tcp    http   SF        310       1881     0
-494017         0           tcp    http   SF        282       2286     0
-494018         0           tcp    http   SF        203       1200     0
-494019         0           tcp    http   SF        291       1200     0
-494020         0           tcp    http   SF        219       1234     0
-
-        wrong\_fragment  urgent  hot  {\ldots}  rerror\_rate  same\_srv\_rate  \textbackslash{}
-0                    0       0    0  {\ldots}          0.0            1.0
-1                    0       0    0  {\ldots}          0.0            1.0
-2                    0       0    0  {\ldots}          0.0            1.0
-3                    0       0    0  {\ldots}          0.0            1.0
-4                    0       0    0  {\ldots}          0.0            1.0
-{\ldots}                {\ldots}     {\ldots}  {\ldots}  {\ldots}          {\ldots}            {\ldots}
-494016               0       0    0  {\ldots}          0.0            1.0
-494017               0       0    0  {\ldots}          0.0            1.0
-494018               0       0    0  {\ldots}          0.0            1.0
-494019               0       0    0  {\ldots}          0.0            1.0
-494020               0       0    0  {\ldots}          0.0            1.0
-
-        diff\_srv\_rate  srv\_diff\_host\_rate  dst\_host\_count  dst\_host\_srv\_count  \textbackslash{}
-0                 0.0                0.00               9                   9
-1                 0.0                0.00              19                  19
-2                 0.0                0.00              29                  29
-3                 0.0                0.00              39                  39
-4                 0.0                0.00              49                  49
-{\ldots}               {\ldots}                 {\ldots}             {\ldots}                 {\ldots}
-494016            0.0                0.40              86                 255
-494017            0.0                0.00               6                 255
-494018            0.0                0.17              16                 255
-494019            0.0                0.17              26                 255
-494020            0.0                0.14               6                 255
-
-        dst\_host\_diff\_srv\_rate  dst\_host\_same\_src\_port\_rate  \textbackslash{}
-0                          0.0                         0.11
-1                          0.0                         0.05
-2                          0.0                         0.03
-3                          0.0                         0.03
-4                          0.0                         0.02
-{\ldots}                        {\ldots}                          {\ldots}
-494016                     0.0                         0.01
-494017                     0.0                         0.17
-494018                     0.0                         0.06
-494019                     0.0                         0.04
-494020                     0.0                         0.17
-
-        dst\_host\_srv\_diff\_host\_rate  attack\_type
-0                              0.00       normal
-1                              0.00       normal
-2                              0.00       normal
-3                              0.00       normal
-4                              0.00       normal
-{\ldots}                             {\ldots}          {\ldots}
-494016                         0.05       normal
-494017                         0.05       normal
-494018                         0.05       normal
-494019                         0.05       normal
-494020                         0.05       normal
-
-[494021 rows x 31 columns]
+duration                         int64
+protocol\_type                   object
+service                         object
+flag                            object
+src\_bytes                        int64
+dst\_bytes                        int64
+land                             int64
+wrong\_fragment                   int64
+urgent                           int64
+hot                              int64
+num\_failed\_logins                int64
+logged\_in                        int64
+num\_compromised                  int64
+root\_shell                       int64
+su\_attempted                     int64
+num\_file\_creations               int64
+num\_shells                       int64
+num\_access\_files                 int64
+is\_guest\_login                   int64
+count                            int64
+serror\_rate                    float64
+rerror\_rate                    float64
+same\_srv\_rate                  float64
+diff\_srv\_rate                  float64
+srv\_diff\_host\_rate             float64
+dst\_host\_count                   int64
+dst\_host\_srv\_count               int64
+dst\_host\_diff\_srv\_rate         float64
+dst\_host\_same\_src\_port\_rate    float64
+dst\_host\_srv\_diff\_host\_rate    float64
+attack\_type                     object
+dtype: object
 \end{Verbatim}
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{28}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{protocol\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value\PYZus{}counts}\PY{p}{(}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{28}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 icmp    283602
 tcp     190065
@@ -1251,22 +1197,22 @@ Name: protocol\_type, dtype: int64
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{29}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{pmap} \PY{o}{=} \PY{p}{\PYZob{}}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{icmp}\PY{l+s+s2}{\PYZdq{}}\PY{p}{:}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{tcp}\PY{l+s+s2}{\PYZdq{}}\PY{p}{:}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{udp}\PY{l+s+s2}{\PYZdq{}}\PY{p}{:}\PY{l+m+mi}{2}\PY{p}{\PYZcb{}}
+\PY{n}{pmap} \PY{o}{=} \PY{p}{\PYZob{}}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{icmp}\PY{l+s+s2}{\PYZdq{}}\PY{p}{:}\PY{l+m+mi}{0}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{tcp}\PY{l+s+s2}{\PYZdq{}}\PY{p}{:}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{udp}\PY{l+s+s2}{\PYZdq{}}\PY{p}{:}\PY{l+m+mi}{2}\PY{p}{\PYZcb{}}
 \PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{protocol\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{protocol\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{map}\PY{p}{(}\PY{n}{pmap}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{30}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{protocol\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value\PYZus{}counts}\PY{p}{(}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{30}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 0    283602
 1    190065
@@ -1276,32 +1222,32 @@ Name: protocol\_type, dtype: int64
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{31}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{c+c1}{\PYZsh{}flag feature mapping}
-\PY{n}{fmap} \PY{o}{=} \PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SF}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{S0}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{REJ}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RSTR}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RSTO}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{4}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SH}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{5} \PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{S1}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{6} \PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{S2}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{7}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RSTOS0}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{S3}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{9} \PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{OTH}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{10}\PY{p}{\PYZcb{}}
+\PY{n}{fmap} \PY{o}{=} \PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SF}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{0}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{S0}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{REJ}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{2}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RSTR}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{3}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RSTO}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{4}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SH}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{5} \PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{S1}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{6} \PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{S2}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{7}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RSTOS0}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{8}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{S3}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{9} \PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{OTH}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{10}\PY{p}{\PYZcb{}}
 \PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{flag}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{flag}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{map}\PY{p}{(}\PY{n}{fmap}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{32}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{c+c1}{\PYZsh{}attack type feature mapping}
-\PY{n}{amap} \PY{o}{=} \PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dos}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{normal}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{probe}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{r2l}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{u2r}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{4}\PY{p}{\PYZcb{}}
+\PY{n}{amap} \PY{o}{=} \PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dos}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{0}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{normal}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{probe}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{2}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{r2l}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{3}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{u2r}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{l+m+mi}{4}\PY{p}{\PYZcb{}}
 \PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{attack\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{n}{df}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{attack\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{map}\PY{p}{(}\PY{n}{amap}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{33}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{df}\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{service}\PY{l+s+s2}{\PYZdq{}}\PY{p}{]}\PY{o}{.}\PY{n}{value\PYZus{}counts}\PY{p}{(}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{33}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 ecr\_i      281400
 private    110893
@@ -1319,88 +1265,53 @@ Name: service, Length: 66, dtype: int64
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{34}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,}\PY{n}{inplace}\PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
+\PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{axis} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{inplace}\PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{35}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{df}
+\PY{n}{df}\PY{o}{.}\PY{n}{dtypes}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{35}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-        duration  protocol\_type  flag  src\_bytes  dst\_bytes  land  \textbackslash{}
-0              0              1     0        181       5450     0
-1              0              1     0        239        486     0
-2              0              1     0        235       1337     0
-3              0              1     0        219       1337     0
-4              0              1     0        217       2032     0
-{\ldots}          {\ldots}            {\ldots}   {\ldots}        {\ldots}        {\ldots}   {\ldots}
-494016         0              1     0        310       1881     0
-494017         0              1     0        282       2286     0
-494018         0              1     0        203       1200     0
-494019         0              1     0        291       1200     0
-494020         0              1     0        219       1234     0
-
-        wrong\_fragment  urgent  hot  num\_failed\_logins  {\ldots}  rerror\_rate  \textbackslash{}
-0                    0       0    0                  0  {\ldots}          0.0
-1                    0       0    0                  0  {\ldots}          0.0
-2                    0       0    0                  0  {\ldots}          0.0
-3                    0       0    0                  0  {\ldots}          0.0
-4                    0       0    0                  0  {\ldots}          0.0
-{\ldots}                {\ldots}     {\ldots}  {\ldots}                {\ldots}  {\ldots}          {\ldots}
-494016               0       0    0                  0  {\ldots}          0.0
-494017               0       0    0                  0  {\ldots}          0.0
-494018               0       0    0                  0  {\ldots}          0.0
-494019               0       0    0                  0  {\ldots}          0.0
-494020               0       0    0                  0  {\ldots}          0.0
-
-        same\_srv\_rate  diff\_srv\_rate  srv\_diff\_host\_rate  dst\_host\_count  \textbackslash{}
-0                 1.0            0.0                0.00               9
-1                 1.0            0.0                0.00              19
-2                 1.0            0.0                0.00              29
-3                 1.0            0.0                0.00              39
-4                 1.0            0.0                0.00              49
-{\ldots}               {\ldots}            {\ldots}                 {\ldots}             {\ldots}
-494016            1.0            0.0                0.40              86
-494017            1.0            0.0                0.00               6
-494018            1.0            0.0                0.17              16
-494019            1.0            0.0                0.17              26
-494020            1.0            0.0                0.14               6
-
-        dst\_host\_srv\_count  dst\_host\_diff\_srv\_rate  \textbackslash{}
-0                        9                     0.0
-1                       19                     0.0
-2                       29                     0.0
-3                       39                     0.0
-4                       49                     0.0
-{\ldots}                    {\ldots}                     {\ldots}
-494016                 255                     0.0
-494017                 255                     0.0
-494018                 255                     0.0
-494019                 255                     0.0
-494020                 255                     0.0
-
-        dst\_host\_same\_src\_port\_rate  dst\_host\_srv\_diff\_host\_rate  attack\_type
-0                              0.11                         0.00            1
-1                              0.05                         0.00            1
-2                              0.03                         0.00            1
-3                              0.03                         0.00            1
-4                              0.02                         0.00            1
-{\ldots}                             {\ldots}                          {\ldots}          {\ldots}
-494016                         0.01                         0.05            1
-494017                         0.17                         0.05            1
-494018                         0.06                         0.05            1
-494019                         0.04                         0.05            1
-494020                         0.17                         0.05            1
-
-[494021 rows x 30 columns]
+duration                         int64
+protocol\_type                    int64
+flag                             int64
+src\_bytes                        int64
+dst\_bytes                        int64
+land                             int64
+wrong\_fragment                   int64
+urgent                           int64
+hot                              int64
+num\_failed\_logins                int64
+logged\_in                        int64
+num\_compromised                  int64
+root\_shell                       int64
+su\_attempted                     int64
+num\_file\_creations               int64
+num\_shells                       int64
+num\_access\_files                 int64
+is\_guest\_login                   int64
+count                            int64
+serror\_rate                    float64
+rerror\_rate                    float64
+same\_srv\_rate                  float64
+diff\_srv\_rate                  float64
+srv\_diff\_host\_rate             float64
+dst\_host\_count                   int64
+dst\_host\_srv\_count               int64
+dst\_host\_diff\_srv\_rate         float64
+dst\_host\_same\_src\_port\_rate    float64
+dst\_host\_srv\_diff\_host\_rate    float64
+attack\_type                      int64
+dtype: object
 \end{Verbatim}
 \end{tcolorbox}
         
@@ -1408,143 +1319,179 @@ Name: service, Length: 66, dtype: int64
 \section{Scaling}\label{scaling}}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{36}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{df}\PY{o}{.}\PY{n}{describe}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{36}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+            duration  protocol\_type           flag     src\_bytes  \textbackslash{}
+count  494021.000000  494021.000000  494021.000000  4.940210e+05
+mean       47.979302       0.467132       0.297730  3.025610e+03
+std       707.746472       0.575606       0.597424  9.882181e+05
+min         0.000000       0.000000       0.000000  0.000000e+00
+25\%         0.000000       0.000000       0.000000  4.500000e+01
+50\%         0.000000       0.000000       0.000000  5.200000e+02
+75\%         0.000000       1.000000       0.000000  1.032000e+03
+max     58329.000000       2.000000      10.000000  6.933756e+08
+
+          dst\_bytes           land  wrong\_fragment         urgent  \textbackslash{}
+count  4.940210e+05  494021.000000   494021.000000  494021.000000
+mean   8.685324e+02       0.000045        0.006433       0.000014
+std    3.304000e+04       0.006673        0.134805       0.005510
+min    0.000000e+00       0.000000        0.000000       0.000000
+25\%    0.000000e+00       0.000000        0.000000       0.000000
+50\%    0.000000e+00       0.000000        0.000000       0.000000
+75\%    0.000000e+00       0.000000        0.000000       0.000000
+max    5.155468e+06       1.000000        3.000000       3.000000
+
+                 hot  num\_failed\_logins  {\ldots}    rerror\_rate  same\_srv\_rate  \textbackslash{}
+count  494021.000000      494021.000000  {\ldots}  494021.000000  494021.000000
+mean        0.034519           0.000152  {\ldots}       0.057433       0.791547
+std         0.782103           0.015520  {\ldots}       0.231623       0.388189
+min         0.000000           0.000000  {\ldots}       0.000000       0.000000
+25\%         0.000000           0.000000  {\ldots}       0.000000       1.000000
+50\%         0.000000           0.000000  {\ldots}       0.000000       1.000000
+75\%         0.000000           0.000000  {\ldots}       0.000000       1.000000
+max        30.000000           5.000000  {\ldots}       1.000000       1.000000
+
+       diff\_srv\_rate  srv\_diff\_host\_rate  dst\_host\_count  dst\_host\_srv\_count  \textbackslash{}
+count  494021.000000       494021.000000   494021.000000       494021.000000
+mean        0.020982            0.028997      232.470778          188.665670
+std         0.082205            0.142397       64.745380          106.040437
+min         0.000000            0.000000        0.000000            0.000000
+25\%         0.000000            0.000000      255.000000           46.000000
+50\%         0.000000            0.000000      255.000000          255.000000
+75\%         0.000000            0.000000      255.000000          255.000000
+max         1.000000            1.000000      255.000000          255.000000
+
+       dst\_host\_diff\_srv\_rate  dst\_host\_same\_src\_port\_rate  \textbackslash{}
+count           494021.000000                494021.000000
+mean                 0.030906                     0.601935
+std                  0.109259                     0.481309
+min                  0.000000                     0.000000
+25\%                  0.000000                     0.000000
+50\%                  0.000000                     1.000000
+75\%                  0.040000                     1.000000
+max                  1.000000                     1.000000
+
+       dst\_host\_srv\_diff\_host\_rate    attack\_type
+count                494021.000000  494021.000000
+mean                      0.006684       0.220796
+std                       0.042133       0.451233
+min                       0.000000       0.000000
+25\%                       0.000000       0.000000
+50\%                       0.000000       0.000000
+75\%                       0.000000       0.000000
+max                       1.000000       4.000000
+
+[8 rows x 30 columns]
+\end{Verbatim}
+\end{tcolorbox}
+        
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{37}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{k+kn}{from} \PY{n+nn}{sklearn}\PY{n+nn}{.}\PY{n+nn}{preprocessing} \PY{k+kn}{import} \PY{n}{MinMaxScaler}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{38}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{y} \PY{o}{=} \PY{n}{df}\PY{p}{[}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{attack\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{]}
-\PY{n}{X} \PY{o}{=} \PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{attack\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}\PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
+\PY{n}{X} \PY{o}{=} \PY{n}{df}\PY{o}{.}\PY{n}{drop}\PY{p}{(}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{attack\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{39}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{y}
+\PY{n}{y}\PY{o}{.}\PY{n}{head}\PY{p}{(}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{39}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-        attack\_type
-0                 1
-1                 1
-2                 1
-3                 1
-4                 1
-{\ldots}             {\ldots}
-494016            1
-494017            1
-494018            1
-494019            1
-494020            1
-
-[494021 rows x 1 columns]
+   attack\_type
+0            1
+1            1
+2            1
+3            1
+4            1
 \end{Verbatim}
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{40}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{X}
+\PY{n}{X}\PY{o}{.}\PY{n}{head}\PY{p}{(}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{40}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-        duration  protocol\_type  flag  src\_bytes  dst\_bytes  land  \textbackslash{}
-0              0              1     0        181       5450     0
-1              0              1     0        239        486     0
-2              0              1     0        235       1337     0
-3              0              1     0        219       1337     0
-4              0              1     0        217       2032     0
-{\ldots}          {\ldots}            {\ldots}   {\ldots}        {\ldots}        {\ldots}   {\ldots}
-494016         0              1     0        310       1881     0
-494017         0              1     0        282       2286     0
-494018         0              1     0        203       1200     0
-494019         0              1     0        291       1200     0
-494020         0              1     0        219       1234     0
+   duration  protocol\_type  flag  src\_bytes  dst\_bytes  land  wrong\_fragment  \textbackslash{}
+0         0              1     0        181       5450     0               0
+1         0              1     0        239        486     0               0
+2         0              1     0        235       1337     0               0
+3         0              1     0        219       1337     0               0
+4         0              1     0        217       2032     0               0
 
-        wrong\_fragment  urgent  hot  num\_failed\_logins  {\ldots}  serror\_rate  \textbackslash{}
-0                    0       0    0                  0  {\ldots}         0.00
-1                    0       0    0                  0  {\ldots}         0.00
-2                    0       0    0                  0  {\ldots}         0.00
-3                    0       0    0                  0  {\ldots}         0.00
-4                    0       0    0                  0  {\ldots}         0.00
-{\ldots}                {\ldots}     {\ldots}  {\ldots}                {\ldots}  {\ldots}          {\ldots}
-494016               0       0    0                  0  {\ldots}         0.00
-494017               0       0    0                  0  {\ldots}         0.00
-494018               0       0    0                  0  {\ldots}         0.17
-494019               0       0    0                  0  {\ldots}         0.00
-494020               0       0    0                  0  {\ldots}         0.00
+   urgent  hot  num\_failed\_logins  {\ldots}  serror\_rate  rerror\_rate  \textbackslash{}
+0       0    0                  0  {\ldots}          0.0          0.0
+1       0    0                  0  {\ldots}          0.0          0.0
+2       0    0                  0  {\ldots}          0.0          0.0
+3       0    0                  0  {\ldots}          0.0          0.0
+4       0    0                  0  {\ldots}          0.0          0.0
 
-        rerror\_rate  same\_srv\_rate  diff\_srv\_rate  srv\_diff\_host\_rate  \textbackslash{}
-0               0.0            1.0            0.0                0.00
-1               0.0            1.0            0.0                0.00
-2               0.0            1.0            0.0                0.00
-3               0.0            1.0            0.0                0.00
-4               0.0            1.0            0.0                0.00
-{\ldots}             {\ldots}            {\ldots}            {\ldots}                 {\ldots}
-494016          0.0            1.0            0.0                0.40
-494017          0.0            1.0            0.0                0.00
-494018          0.0            1.0            0.0                0.17
-494019          0.0            1.0            0.0                0.17
-494020          0.0            1.0            0.0                0.14
+   same\_srv\_rate  diff\_srv\_rate  srv\_diff\_host\_rate  dst\_host\_count  \textbackslash{}
+0            1.0            0.0                 0.0               9
+1            1.0            0.0                 0.0              19
+2            1.0            0.0                 0.0              29
+3            1.0            0.0                 0.0              39
+4            1.0            0.0                 0.0              49
 
-        dst\_host\_count  dst\_host\_srv\_count  dst\_host\_diff\_srv\_rate  \textbackslash{}
-0                    9                   9                     0.0
-1                   19                  19                     0.0
-2                   29                  29                     0.0
-3                   39                  39                     0.0
-4                   49                  49                     0.0
-{\ldots}                {\ldots}                 {\ldots}                     {\ldots}
-494016              86                 255                     0.0
-494017               6                 255                     0.0
-494018              16                 255                     0.0
-494019              26                 255                     0.0
-494020               6                 255                     0.0
+   dst\_host\_srv\_count  dst\_host\_diff\_srv\_rate  dst\_host\_same\_src\_port\_rate  \textbackslash{}
+0                   9                     0.0                         0.11
+1                  19                     0.0                         0.05
+2                  29                     0.0                         0.03
+3                  39                     0.0                         0.03
+4                  49                     0.0                         0.02
 
-        dst\_host\_same\_src\_port\_rate  dst\_host\_srv\_diff\_host\_rate
-0                              0.11                         0.00
-1                              0.05                         0.00
-2                              0.03                         0.00
-3                              0.03                         0.00
-4                              0.02                         0.00
-{\ldots}                             {\ldots}                          {\ldots}
-494016                         0.01                         0.05
-494017                         0.17                         0.05
-494018                         0.06                         0.05
-494019                         0.04                         0.05
-494020                         0.17                         0.05
+   dst\_host\_srv\_diff\_host\_rate
+0                          0.0
+1                          0.0
+2                          0.0
+3                          0.0
+4                          0.0
 
-[494021 rows x 29 columns]
+[5 rows x 29 columns]
 \end{Verbatim}
 \end{tcolorbox}
         
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{41}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{scaler} \PY{o}{=} \PY{n}{MinMaxScaler}\PY{p}{(}\PY{p}{)} \PY{c+c1}{\PYZsh{}  MinMaxScaler scales the data to a fixed range (by default, between 0 and 1) by subtracting the minimum value and dividing by the range of the data.}
+\PY{n}{scaler} \PY{o}{=} \PY{n}{MinMaxScaler}\PY{p}{(}\PY{p}{)} \PY{c+c1}{\PYZsh{} MinMaxScaler scales the data to a fixed range (by default, between 0 and 1) by subtracting the minimum value and dividing by the range of the data.}
 \PY{n}{X} \PY{o}{=} \PY{n}{scaler}\PY{o}{.}\PY{n}{fit\PYZus{}transform}\PY{p}{(}\PY{n}{X}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{42}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{X}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{42}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 array([[0.  , 0.5 , 0.  , {\ldots}, 0.  , 0.11, 0.  ],
        [0.  , 0.5 , 0.  , {\ldots}, 0.  , 0.05, 0.  ],
@@ -1560,16 +1507,16 @@ array([[0.  , 0.5 , 0.  , {\ldots}, 0.  , 0.11, 0.  ],
 \section{Train-test split}\label{train-test-split}}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{43}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{k+kn}{from} \PY{n+nn}{sklearn}\PY{n+nn}{.}\PY{n+nn}{model\PYZus{}selection} \PY{k+kn}{import} \PY{n}{train\PYZus{}test\PYZus{}split}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{44}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} Split test and train data }
+\PY{c+c1}{\PYZsh{} Split test and train data}
 \PY{n}{X\PYZus{}train}\PY{p}{,} \PY{n}{X\PYZus{}test}\PY{p}{,} \PY{n}{y\PYZus{}train}\PY{p}{,} \PY{n}{y\PYZus{}test} \PY{o}{=} \PY{n}{train\PYZus{}test\PYZus{}split}\PY{p}{(}\PY{n}{X}\PY{p}{,} \PY{n}{y}\PY{p}{,} \PY{n}{test\PYZus{}size}\PY{o}{=}\PY{l+m+mf}{0.33}\PY{p}{,} \PY{n}{random\PYZus{}state}\PY{o}{=}\PY{l+m+mi}{42}\PY{p}{)}
 \PY{n+nb}{print}\PY{p}{(}\PY{n}{X\PYZus{}train}\PY{o}{.}\PY{n}{shape}\PY{p}{,} \PY{n}{X\PYZus{}test}\PY{o}{.}\PY{n}{shape}\PY{p}{)}
 \PY{n+nb}{print}\PY{p}{(}\PY{n}{y\PYZus{}train}\PY{o}{.}\PY{n}{shape}\PY{p}{,} \PY{n}{y\PYZus{}test}\PY{o}{.}\PY{n}{shape}\PY{p}{)}
@@ -1582,14 +1529,14 @@ array([[0.  , 0.5 , 0.  , {\ldots}, 0.  , 0.11, 0.  ],
     \end{Verbatim}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{ }{\boxspacing}
+\prompt{In}{incolor}{45}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{X\PYZus{}train}\PY{o}{.}\PY{n}{shape}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}
 \end{Verbatim}
 \end{tcolorbox}
 
             \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
-\prompt{Out}{outcolor}{ }{\boxspacing}
+\prompt{Out}{outcolor}{45}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 29
 \end{Verbatim}
