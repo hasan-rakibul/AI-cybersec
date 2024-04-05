@@ -17,7 +17,7 @@
     python -m pip install nbconvert
     ```
 - `jupyter nbconvert --to latex <filename.ipynb> --output ICT607-lab-<number>-manual.tex`
-- Change the `tex` file (what you like to have). For example, before `\begin{document}`around line 167 you can add/modify:
+- Change the `tex` file (what you like to have). For example, before `\begin{document}`around line 388 you can add/modify:
     ```
     \usepackage{fancyhdr,lastpage}
     \pagestyle{fancyplain}
