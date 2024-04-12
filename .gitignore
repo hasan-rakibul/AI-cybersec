@@ -1,7 +1,15 @@
+*/Tentative solution of the tasks by students/
 OTHER/
 MU_wordmark_2021_red_RGB.png
 **/*-manual_files/
 *.tex
+change_plan.txt
+*.png
+
+# # Ignore all pdfs except the ones in Lab 1 to 4
+# *.pdf
+# # keep Lab 1 to 4 pdfs
+# !Lab [1-4]/*.pdf
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
@@ -22,9 +30,8 @@ MU_wordmark_2021_red_RGB.png
 *.xdv
 *-converted-to.*
 # these rules might exclude image files for figures etc.
-# *.ps
-# *.eps
-# *.pdf
+*.ps
+*.eps
 
 ## Generated if empty string is given at "Please type another file name for output:"
 .pdf
