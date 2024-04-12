@@ -6,10 +6,10 @@ MU_wordmark_2021_red_RGB.png
 change_plan.txt
 *.png
 
-# # Ignore all pdfs except the ones in Lab 1 to 4
-# *.pdf
-# # keep Lab 1 to 4 pdfs
-# !Lab [1-4]/*.pdf
+# Ignore all pdfs except the ones in Lab 1 to 4
+*.pdf
+# keep Lab 1 to 4 pdfs
+!Lab [1-4]/*.pdf
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
