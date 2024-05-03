@@ -30,4 +30,4 @@
     ```
 - `xelatex' <manual filename.tex>`
 - `rm *.log *.aux *.out` to remove unnecessary files
-- `colab_ipynb_to_pdf.ipynb` to generate pdf from Google colab directly (have less control such as always having today's date on the top sheet)
+- Alternatively, run `colab_ipynb_to_pdf.ipynb` to generate pdf from Google colab directly (have less control such as always having today's date on the top sheet)

@@ -3,8 +3,14 @@ OTHER/
 MU_wordmark_2021_red_RGB.png
 **/*-manual_files/
 *.tex
-change_plan.txt
+
+*.txt
 *.png
+
+# not gitting the datasets
+*.csv
+
+*/lab_8.py
 
 # Ignore all pdfs except the ones in Lab 1 to 4
 *.pdf
